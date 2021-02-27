@@ -1,0 +1,38 @@
+version: '3.5'
+
+services:
+  controller:
+    build:
+      context: .
+      dockerfile: Controller.dockerfile
+    ports:
+      - "8080:8080"
+    restart: always
+    command: "python main.py"
+    working_dir: /usr/src/app
+    volumes:
+      - ./Software/Controller:/usr/src/app
+    networks:
+      - app-network
+      
+  gateway:
+    build:
+      context: .
+      dockerfile: Gateway.dockerfile
+    ports:
+      - "3000:3000"
+    restart: always
+    command: "npm run start-production"
+    working_dir: /usr/src/app
+    volumes:
+      - ./Software/Gateway:/usr/src/app
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
