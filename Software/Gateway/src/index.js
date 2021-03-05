@@ -2,8 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const { graphqlExpress, graphiqlExpress } = require('apollo-server-express');
 const { makeExecutableSchema } = require('graphql-tools');
-//var Client = require("socket.engine").Client;
-import { client } from 'socket.engine';
+import { ControllerClient } from './utils';
 
 // Some fake data
 const books = [
@@ -36,15 +35,21 @@ const schema = makeExecutableSchema({
 
 //////////////////////////////////////////////////////////
 
-var c = new client("controller");
-c.start();
+const sendRequest = async () => {
+  try {
+    console.log('Addr', process.env.CONTROLLER_ADDR);
+    console.log('ControllerClient', ControllerClient);
+    const result = await ControllerClient({
+      query: 'query {hello(name: "pelle") }',
+      variables: { name: "henrik" }
+    });
+    console.log('result:', result);
+  } catch (e) {
+    console.log(e);
+  }
+}
 
-c.on("Test", (data) => {
-  console.log(data);
-});
-
-c.write("Test", "Hello there!");
-console.log('Message sent');
+setTimeout(sendRequest, 3000);
 
 //////////////////////////////////////////////////////////
 

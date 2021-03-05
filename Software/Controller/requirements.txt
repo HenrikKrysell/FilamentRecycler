@@ -1,2 +1,3 @@
-opencv-python
-socket.engine
+flask>=1.1
+flask_graphql>=2
+graphene>=2

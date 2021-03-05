@@ -6,7 +6,7 @@ services:
       context: .
       dockerfile: Controller.dockerfile
     ports:
-      - "8080:8080"
+      - "5001:5001"
     restart: always
     command: "python main.py"
     working_dir: /usr/src/app
@@ -24,6 +24,8 @@ services:
     restart: always
     command: "npm run start-production"
     working_dir: /usr/src/app
+    environment:
+      - CONTROLLER_ADDR=http://controller:5001/graphql
     volumes:
       - ./Software/Gateway:/usr/src/app
     networks:

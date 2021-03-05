@@ -1,60 +1,49 @@
-from socketengine import host
+from flask import Flask
+from flask_graphql import GraphQLView
+import signal
+from graphene import ObjectType, String, Schema
+#import asyncio
+import threading
+import time
+from python_graphql_client import GraphqlClient
 
-print("Starting TCP server...")
-h = host()
-h.start()
-print("Server started!")
+class Query(ObjectType):
+    # this defines a Field `hello` in our Schema with a single Argument `name`
+    hello = String(name=String(default_value="stranger"))
+    goodbye = String()
 
-while True:
-  data = h.get_ALL("Test")
-  if data is not None:
-    for item in data:
-      print(item)
-      break
+    # our Resolver method takes the GraphQL context (root, info) as well as
+    # Argument (name) for the Field and returns data for the query Response
+    def resolve_hello(root, info, name):
+        return f'Hello {name}!'
 
-h.close()
-# # import socketio
-# # from time import sleep # just used for timing the messages
+    def resolve_goodbye(root, info):
+        return 'See ya!'
 
-# # sio = socketio.Client()
+schema = Schema(query=Query)
 
-# # @sio.event
-# # def connect():
-# #     print('Connection established with server to send message data.')
+app = Flask(__name__)
+app.debug = True
 
-# # def send_msg(msg):
-# #     print("sending")
-# #     sio.emit('msg', msg)
+@app.route('/')
+def hello_world():
+    return "hello world"
 
-# # @sio.event
-# # def disconnect():
-# #     print('Disconnected from websocket! Cannot send message data.')
+app.add_url_rule(
+    '/graphql',
+    view_func=GraphQLView.as_view(
+        'graphql',
+        schema=schema,
+        graphql_schema=schema,
+        graphiql=True # for having the GraphiQL interface
+    )
+)
 
-# # sio.connect('ws://localhost:6079')
+# Gracefully close the app when docker closes
+def handle_sigterm(*args):
+    raise KeyboardInterrupt()
+signal.signal(signal.SIGTERM, handle_sigterm)
 
-# # # list of messages to send
-# # MESSAGE_LIST = ["66903222854465",
-# #                 "36558352171508",
-# #                 "42493680134299",
-# #                 "32010903761366",
-# #                 "37556732408598",
-# #                 "00418984412935",
-# #                 "54555467232969",
-# #                 "95461295964563",
-# #                 "63543734057786",
-# #                 "37925062203941"]
 
-# # # logic to send the 10 messages then close connection
-# # x = 0
-# # while x < 10:
-# #     send_msg(MESSAGE_LIST[x])
-# #     sleep(1)
-# #     x += 1
-
-# # sio.disconnect()
-# import time
-
-# print("Hello World!")
-
-# while True:
-#   time.sleep(1)
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5001)
