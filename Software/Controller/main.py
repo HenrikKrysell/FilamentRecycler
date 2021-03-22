@@ -5,7 +5,6 @@ from graphene import ObjectType, String, Schema
 #import asyncio
 import threading
 import time
-from python_graphql_client import GraphqlClient
 
 class Query(ObjectType):
     # this defines a Field `hello` in our Schema with a single Argument `name`
