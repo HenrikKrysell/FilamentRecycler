@@ -5,6 +5,6 @@ struct MotorDefinition {
   int motorDirPin;
   int motorStepPin;
   int motorEnablePin;
-}
+};
 
 #endif

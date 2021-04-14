@@ -9,27 +9,19 @@ SpoolWinder::SpoolWinder(MotorDefinition spoolWinderMotorDef, MotorDefinition fi
   _filamentGuideEndStopPin = filamentGuideEndStopPin;
 
   _spoolWinderStepper = new AccelStepper(A4988InterfaceType, _spoolWinderMotorDef.motorStepPin, _spoolWinderMotorDef.motorDirPin);
-  _filamentGuideMotorDef = new AccelStepper(A4988InterfaceType, _filamentGuideMotorDef.motorStepPin, _filamentGuideMotorDef.motorDirPin);
+  _filamentGuideStepper = new AccelStepper(A4988InterfaceType, _filamentGuideMotorDef.motorStepPin, _filamentGuideMotorDef.motorDirPin);
+  _filemanetGuideHomingHelper = new StepperHomingHelper(_filamentGuideStepper, _filamentGuideMotorDef, _filamentGuideEndStopPin);
   _isWinding = false;
-  _isHoming = false;
-  _homingDone = false;
 }
 
-bool SpoolWinder::startHomingAllAxes()
+void SpoolWinder::startHoming()
 {
-  _isHoming = true;
-  _homingDone = false;
+  _filemanetGuideHomingHelper->start();
 }
 
-bool SpoolWinder::stopHomingAllAxes()
+ bool SpoolWinder::homingLoop()
 {
-  _isHoming = false;
-  _homingDone = false;
-}
-
-bool SpoolWinder::homeAllAxesLoop()
-{
-  digitalRead
+  return _filemanetGuideHomingHelper->loop();
 }
 
 void SpoolWinder::setup()
@@ -45,25 +37,25 @@ void SpoolWinder::setup()
   // Set the maximum speed in steps per second:
   _spoolWinderStepper->setMaxSpeed(1000);
   _spoolWinderStepper->setSpeed(900);
-  _filamentGuideMotorDef->setMaxSpeed(1000);
-  _filamentGuideMotorDef->setSpeed(900);
+  _filamentGuideStepper->setMaxSpeed(1000);
+  _filamentGuideStepper->setSpeed(900);
 }
 
 void SpoolWinder::loop()
 {
-  if (_isWinding)
-  {
-    int maxLimitValue = digitalRead(_maxLimitSwitchPin);
-    if (maxLimitValue > 0)
-      _isWinding = false;
-  }
-  else
-  {
-    int minLimitValue = digitalRead(_minLimitSwitchPin);
-    if (minLimitValue > 0)
-      _isWinding = true;
-  }
+  // if (_isWinding)
+  // {
+  //   int maxLimitValue = digitalRead(_maxLimitSwitchPin);
+  //   if (maxLimitValue > 0)
+  //     _isWinding = false;
+  // }
+  // else
+  // {
+  //   int minLimitValue = digitalRead(_minLimitSwitchPin);
+  //   if (minLimitValue > 0)
+  //     _isWinding = true;
+  // }
     
-  if (_isWinding)
-    _stepper->runSpeed();
+  // if (_isWinding)
+  //   _stepper->runSpeed();
 }

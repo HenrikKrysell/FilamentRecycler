@@ -11,9 +11,8 @@ class SpoolWinder
   public:
     SpoolWinder(MotorDefinition spoolWinderMotorDef, MotorDefinition filamentGuideMotorDef, int filamentGuideEndStopPin);
     void setup();
-    void startHomingAllAxes();
-    bool homeAllAxesLoop();
-    void stopHomingAllAxes();
+    void startHoming();
+    bool homingLoop();
     void loop();
 
   private:
@@ -25,7 +24,7 @@ class SpoolWinder
     bool _homingDone;
     AccelStepper* _spoolWinderStepper;
     AccelStepper* _filamentGuideStepper;
-    StepperHomingHelper _filemanetGuideHomingHelper;
+    StepperHomingHelper* _filemanetGuideHomingHelper;
 };
 
 #endif
