@@ -2,46 +2,68 @@
 
 const int A4988InterfaceType = 1;
 
-
-SpoolWinder::SpoolWinder(int motorStepPin, int motorDirPin, int motorEnablePin, int maxLimitSwitchPin, int minLimitSwitchPin)
+SpoolWinder::SpoolWinder(MotorDefinition spoolWinderMotorDef, MotorDefinition filamentGuideMotorDef, int filamentGuideEndStopPin)
 {
-  _motorStepPin = motorStepPin;
-  _motorDirPin = motorDirPin;
-  _motorEnablePin = motorEnablePin;
-  _maxLimitSwitchPin = maxLimitSwitchPin;
-  _minLimitSwitchPin = minLimitSwitchPin;
-  _stepper = new AccelStepper(A4988InterfaceType, motorStepPin, motorDirPin);
-  _isRunning = false;
+  _spoolWinderMotorDef = spoolWinderMotorDef;
+  _filamentGuideMotorDef = filamentGuideMotorDef;
+  _filamentGuideEndStopPin = filamentGuideEndStopPin;
+
+  _spoolWinderStepper = new AccelStepper(A4988InterfaceType, _spoolWinderMotorDef.motorStepPin, _spoolWinderMotorDef.motorDirPin);
+  _filamentGuideMotorDef = new AccelStepper(A4988InterfaceType, _filamentGuideMotorDef.motorStepPin, _filamentGuideMotorDef.motorDirPin);
+  _isWinding = false;
+  _isHoming = false;
+  _homingDone = false;
+}
+
+bool SpoolWinder::startHomingAllAxes()
+{
+  _isHoming = true;
+  _homingDone = false;
+}
+
+bool SpoolWinder::stopHomingAllAxes()
+{
+  _isHoming = false;
+  _homingDone = false;
+}
+
+bool SpoolWinder::homeAllAxesLoop()
+{
+  digitalRead
 }
 
 void SpoolWinder::setup()
 {
-  pinMode(_minLimitSwitchPin, INPUT);
-  pinMode(_maxLimitSwitchPin, INPUT);
+  pinMode(_filamentGuideEndStopPin, INPUT);
 
-  pinMode(_motorEnablePin, OUTPUT);
-  digitalWrite(_motorEnablePin, LOW);
+  pinMode(_spoolWinderMotorDef.motorEnablePin, OUTPUT);
+  digitalWrite(_spoolWinderMotorDef.motorEnablePin, LOW);
+
+  pinMode(_filamentGuideMotorDef.motorEnablePin, OUTPUT);
+  digitalWrite(_filamentGuideMotorDef.motorEnablePin, LOW);
 
   // Set the maximum speed in steps per second:
-  _stepper->setMaxSpeed(1000);
-  _stepper->setSpeed(900);
+  _spoolWinderStepper->setMaxSpeed(1000);
+  _spoolWinderStepper->setSpeed(900);
+  _filamentGuideMotorDef->setMaxSpeed(1000);
+  _filamentGuideMotorDef->setSpeed(900);
 }
 
 void SpoolWinder::loop()
 {
-  if (_isRunning)
+  if (_isWinding)
   {
     int maxLimitValue = digitalRead(_maxLimitSwitchPin);
     if (maxLimitValue > 0)
-      _isRunning = false;
+      _isWinding = false;
   }
   else
   {
     int minLimitValue = digitalRead(_minLimitSwitchPin);
     if (minLimitValue > 0)
-      _isRunning = true;
+      _isWinding = true;
   }
     
-  if (_isRunning)
+  if (_isWinding)
     _stepper->runSpeed();
 }
