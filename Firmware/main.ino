@@ -4,6 +4,8 @@
 Controller controller = Controller();
 
 void setup() {
+  Serial.begin(115200);
+
   controller.setup();
   controller.changeState(ControllerStates::Homing);
 }

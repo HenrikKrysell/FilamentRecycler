@@ -6,15 +6,17 @@
 #include "SpoolWinder.h"
 
 enum ControllerStates {
-  Idle=0,
-  Homing,
-  Running,
+  Idle = 'I',
+  Homing = 'H',
+  Running = 'R',
 };
 
 class Controller
 {
   public:
     Controller();
+    ~Controller();
+
     void setup();
     void loop();
 

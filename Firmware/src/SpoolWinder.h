@@ -2,18 +2,24 @@
 #define SpoolWinder_h
 
 #include <Arduino.h>
-#include <AccelStepper.h>
 #include "DataStructures/motorDefinition.h"
 #include "Utilities/StepperHomingHelper.h"
+#include <A4988.h>
+#include "Utilities/Constants.h"
+#include "Drivers/StepperMotor.h"
 
 class SpoolWinder
 {
   public:
     SpoolWinder(MotorDefinition spoolWinderMotorDef, MotorDefinition filamentGuideMotorDef, int filamentGuideEndStopPin);
+    ~SpoolWinder();
+    
     void setup();
     void startHoming();
     bool homingLoop();
-    void loop();
+
+    void startLoop();
+    bool loop();
 
   private:
     MotorDefinition _spoolWinderMotorDef;
@@ -22,8 +28,8 @@ class SpoolWinder
     bool _isWinding;
     bool _isHoming;
     bool _homingDone;
-    AccelStepper* _spoolWinderStepper;
-    AccelStepper* _filamentGuideStepper;
+    StepperMotor* _spoolWinderStepper;
+    StepperMotor* _filamentGuideStepper;
     StepperHomingHelper* _filemanetGuideHomingHelper;
 };
 

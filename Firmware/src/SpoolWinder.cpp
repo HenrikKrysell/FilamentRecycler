@@ -8,10 +8,24 @@ SpoolWinder::SpoolWinder(MotorDefinition spoolWinderMotorDef, MotorDefinition fi
   _filamentGuideMotorDef = filamentGuideMotorDef;
   _filamentGuideEndStopPin = filamentGuideEndStopPin;
 
-  _spoolWinderStepper = new AccelStepper(A4988InterfaceType, _spoolWinderMotorDef.motorStepPin, _spoolWinderMotorDef.motorDirPin);
-  _filamentGuideStepper = new AccelStepper(A4988InterfaceType, _filamentGuideMotorDef.motorStepPin, _filamentGuideMotorDef.motorDirPin);
+  _spoolWinderStepper = new StepperMotor(_spoolWinderMotorDef);
+  _filamentGuideStepper = new StepperMotor(_filamentGuideMotorDef);
+
   _filemanetGuideHomingHelper = new StepperHomingHelper(_filamentGuideStepper, _filamentGuideMotorDef, _filamentGuideEndStopPin);
   _isWinding = false;
+}
+ 
+ SpoolWinder::~SpoolWinder()
+ {
+   delete _spoolWinderStepper;
+   delete _filamentGuideStepper;
+   delete _filemanetGuideHomingHelper;
+ }
+
+void SpoolWinder::setup()
+{
+  _spoolWinderStepper->start();
+  _filamentGuideStepper->start();
 }
 
 void SpoolWinder::startHoming()
@@ -19,30 +33,20 @@ void SpoolWinder::startHoming()
   _filemanetGuideHomingHelper->start();
 }
 
- bool SpoolWinder::homingLoop()
+bool SpoolWinder::homingLoop()
 {
   return _filemanetGuideHomingHelper->loop();
 }
 
-void SpoolWinder::setup()
+void SpoolWinder::startLoop()
 {
-  pinMode(_filamentGuideEndStopPin, INPUT);
-
-  pinMode(_spoolWinderMotorDef.motorEnablePin, OUTPUT);
-  digitalWrite(_spoolWinderMotorDef.motorEnablePin, LOW);
-
-  pinMode(_filamentGuideMotorDef.motorEnablePin, OUTPUT);
-  digitalWrite(_filamentGuideMotorDef.motorEnablePin, LOW);
-
-  // Set the maximum speed in steps per second:
-  _spoolWinderStepper->setMaxSpeed(1000);
-  _spoolWinderStepper->setSpeed(900);
-  _filamentGuideStepper->setMaxSpeed(1000);
-  _filamentGuideStepper->setSpeed(900);
+  _filamentGuideStepper->setRPM(NORMAL_RPM);
+  _filamentGuideStepper->setAbsoluteTargetPosition(-20000);
 }
 
-void SpoolWinder::loop()
+bool SpoolWinder::loop()
 {
+  return _filamentGuideStepper->runToPosition();
   // if (_isWinding)
   // {
   //   int maxLimitValue = digitalRead(_maxLimitSwitchPin);

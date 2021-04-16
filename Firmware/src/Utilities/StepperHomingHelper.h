@@ -2,30 +2,35 @@
 #define StepperHomingHelper_h
 
 #include <Arduino.h>
-#include <AccelStepper.h>
 #include "../DataStructures/motorDefinition.h"
+#include <A4988.h>
+#include "Constants.h"
+#include "../Drivers/StepperMotor.h"
 
 
 class StepperHomingHelper
 {
   public:
-    StepperHomingHelper(AccelStepper* stepper, MotorDefinition motorDefinition, int endStopPin);
+    StepperHomingHelper(StepperMotor* stepper, MotorDefinition motorDefinition, int endStopPin);
     void start();
     bool loop();
 
   private:
     enum STATES { 
-      Start=0, 
-      EndStopTriggeredAtStart, 
-      MoveTowardsEndStopFast, 
-      EndStopTriggeredFirstTime, 
-      MoveTowardsEndStopSlow, 
-      Done
+      Start = 'S', 
+      EndStopTriggeredAtStart = 'X', 
+      MoveTowardsEndStopFast = 'F', 
+      EndStopTriggeredFirstTime = 'E',
+      Backup1000StepsAfterEndStopTriggered = 'B',
+      MoveTowardsEndStopSlow = 'M', 
+      Done = 'D'
     };
 
+    void changeState(STATES newState);
+    
     MotorDefinition _motorDefinition;
     int _endStopPin;
-    AccelStepper* _stepper;
+    StepperMotor* _stepper;
     STATES _currentState;
 };
 

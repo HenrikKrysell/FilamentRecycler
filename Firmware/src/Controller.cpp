@@ -4,9 +4,13 @@
 Controller::Controller()
 {
   _currentState = ControllerStates::Idle;
-  _spoolWinder = new SpoolWinder({.motorDirPin=25, .motorStepPin=23, .motorEnablePin=27}, {.motorDirPin=25, .motorStepPin=23, .motorEnablePin=27}, 10);
+  _spoolWinder = new SpoolWinder({.motorDirPin=33, .motorStepPin=31, .motorEnablePin=29}, {.motorDirPin=23, .motorStepPin=25, .motorEnablePin=27}, 24);
 }
 
+Controller::~Controller()
+{
+  delete _spoolWinder;
+}
 
 void Controller::setup()
 {
@@ -26,13 +30,18 @@ void Controller::changeState(ControllerStates newState)
   case ControllerStates::Running:
     {
       if (_currentState == ControllerStates::Idle)
+      {
         _currentState = newState;
+        _spoolWinder->startLoop();
+      }
     }
     break;
   default:
     _currentState = newState;
     break;
   }
+  Serial.println("Controller state:");
+  Serial.println((char)_currentState);
 }
 
 void Controller::loop()
@@ -43,10 +52,21 @@ void Controller::loop()
     {
       bool done = _spoolWinder->homingLoop();
       if (done)
+      {
         changeState(ControllerStates::Idle);
+        changeState(ControllerStates::Running);
+      }
     }
     break;
   case ControllerStates::Running:
+  {
+    if (!_spoolWinder->loop())
+    {
+      Serial.println("Reached position... waiting");
+      delay(2000);
+      changeState(ControllerStates::Homing);
+    }
+  }
     break;
   case ControllerStates::Idle:
     break;

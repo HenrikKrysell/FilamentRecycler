@@ -1,15 +1,50 @@
 #include "StepperHomingHelper.h"
 
-StepperHomingHelper::StepperHomingHelper(AccelStepper* stepper, MotorDefinition motorDefinition, int endStopPin)
+StepperHomingHelper::StepperHomingHelper(StepperMotor* stepper, MotorDefinition motorDefinition, int endStopPin)
 {
   _stepper = stepper;
   _motorDefinition = motorDefinition;
   _endStopPin = endStopPin;
+  pinMode(_endStopPin, INPUT_PULLUP);
 }
 
 void StepperHomingHelper::start()
 {
   _currentState = STATES::Start;
+}
+
+void StepperHomingHelper::changeState(STATES newState)
+{
+  switch (newState)
+  {
+  case STATES::EndStopTriggeredAtStart:
+    _stepper->setRPM(NORMAL_RPM);
+    _stepper->startRunContinuous(BACKWARD);
+    break;
+  case STATES::MoveTowardsEndStopFast:
+    _stepper->setRPM(NORMAL_RPM);
+    _stepper->startRunContinuous(FORWARD);
+    break;
+  case STATES::EndStopTriggeredFirstTime:
+    _stepper->setRPM(SLOW_RPM);
+    _stepper->startRunContinuous(BACKWARD);
+    break;
+  case STATES::Backup1000StepsAfterEndStopTriggered:
+    _stepper->setRPM(SLOW_RPM);
+    _stepper->setRelativeTargetPosition(-1000);
+    break;
+  case STATES::MoveTowardsEndStopSlow:
+    _stepper->setRPM(SUPER_SLOW_RPM);
+    _stepper->startRunContinuous(FORWARD);
+    break;
+  
+  default:
+    break;
+  }
+  _currentState = newState;
+
+  Serial.println("StepperHomingHelper state:");
+  Serial.println((char)_currentState);
 }
 
 bool StepperHomingHelper::loop()
@@ -19,43 +54,48 @@ bool StepperHomingHelper::loop()
     case STATES::Start:
     {
       if (digitalRead(_endStopPin) > 0)
-        _currentState = STATES::EndStopTriggeredAtStart;
+        changeState(STATES::EndStopTriggeredAtStart);
       else
-        _currentState = STATES::MoveTowardsEndStopFast;
+        changeState(STATES::MoveTowardsEndStopFast);
     }
     break;
     case STATES::EndStopTriggeredAtStart:
     {
-      _stepper->setSpeed(-1000);
-      _stepper->runSpeed();
+      _stepper->runContinuous();
       if (digitalRead(_endStopPin) <= 0)
-        _currentState = STATES::MoveTowardsEndStopFast;
+        changeState(STATES::MoveTowardsEndStopFast);
     }
     break;
     case STATES::MoveTowardsEndStopFast:
     {
-      _stepper->setSpeed(1000);
-      _stepper->runSpeed();
+      _stepper->runContinuous();
       if (digitalRead(_endStopPin) > 0)
-        _currentState = STATES::EndStopTriggeredFirstTime;
+        changeState(STATES::EndStopTriggeredFirstTime);
     }
     break;
     case STATES::EndStopTriggeredFirstTime:
     {
-      _stepper->setSpeed(-100);
-      _stepper->runSpeed();
-      if (digitalRead(_endStopPin) <= 0)
-        _currentState = STATES::MoveTowardsEndStopSlow;
+      _stepper->runContinuous();
+      if (digitalRead(_endStopPin) <= 0) 
+      {
+        changeState(STATES::Backup1000StepsAfterEndStopTriggered);
+      }
+    }
+    break;
+    case STATES::Backup1000StepsAfterEndStopTriggered:
+    {
+      if (!_stepper->runToPosition())
+        changeState(STATES::MoveTowardsEndStopSlow);
     }
     break;
     case STATES::MoveTowardsEndStopSlow:
     {
-      _stepper->setSpeed(100);
-      _stepper->runSpeed();
+      _stepper->runContinuous();
       if (digitalRead(_endStopPin) > 0)
       {
-        _stepper->setCurrentPosition(_stepper->currentPosition());
-        _currentState = STATES::Done;
+        _stepper->stop();
+        _stepper->resetPosition();
+        changeState(STATES::Done);
       }
     }
     break;
