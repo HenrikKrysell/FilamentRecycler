@@ -31,6 +31,22 @@ services:
     networks:
       - app-network
 
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend.dockerfile
+    ports:
+      - "80:80"
+    restart: always
+    command: "npm run start-production"
+    working_dir: /usr/src/app
+    environment:
+      - CONTROLLER_ADDR=http://controller:5001/graphql
+    volumes:
+      - ./Software/frontend:/usr/src/app
+    networks:
+      - app-network
+
 networks:
   app-network:
     driver: bridge
