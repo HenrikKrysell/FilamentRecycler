@@ -43,8 +43,8 @@ void StepperHomingHelper::changeState(STATES newState)
   }
   _currentState = newState;
 
-  Serial.println("StepperHomingHelper state:");
-  Serial.println((char)_currentState);
+  Serial.print("StepperHomingHelper state:");
+  Serial.println(StatesNames[_currentState]);
 }
 
 bool StepperHomingHelper::loop()

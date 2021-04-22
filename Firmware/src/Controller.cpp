@@ -34,17 +34,75 @@ void Controller::changeState(ControllerStates newState)
         _currentState = newState;
         _spoolWinder->startLoop();
       }
+      else 
+      {
+        Serial.println("ERROR: Cannot change state to running unless we are in Idle state");
+      }
     }
     break;
-  default:
+  case ControllerStates::Idle:
     _currentState = newState;
+  break;
+  default:  
+    Serial.print("ERROR: Invalid controller state: ");
+    Serial.println(newState);
+    _currentState = ControllerStates::Idle;
     break;
   }
-  Serial.println("Controller state:");
-  Serial.println((char)_currentState);
+
+  Serial.print("Controller state: ");
+  Serial.println(ControllerStatesNames[_currentState]);
 }
 
 void Controller::loop()
+{
+  Command cmd = _serialCommandParser.readIfDataPresent();
+  if (cmd.type != CommandType::Nothing)
+    PerformCommand(cmd);
+
+  StateMachineLoop();
+}
+
+void Controller::PerformCommand(Command cmd)
+{
+  switch (cmd.type)
+  {
+  case CommandType::ChangeState:
+  {
+    if (cmd.parameters[0].name != 'S')
+      Serial.println("ERROR: Change state command only takes one parameter named S");
+    else
+      changeState((ControllerStates)cmd.parameters[0].intValue);
+  }
+  break;
+  case CommandType::SetSpeed:
+  {
+
+  }
+  break;
+  case  CommandType::SetTemperature:
+  {
+
+  }
+  break;
+  case CommandType::Nothing:
+  default:
+    break;
+  }
+
+  // Serial.println("== Command ==");
+  // Serial.println(cmd.type);
+  // for (int i = 0; i < cmd.numParams; i++)
+  // {
+  //   Serial.println("-Param");
+  //   Serial.println(cmd.parameters[i].name);
+  //   Serial.println(cmd.parameters[i].floatValue);
+  //   Serial.println(cmd.parameters[i].intValue);
+  // }
+  // Serial.println("===========");
+}
+
+void Controller::StateMachineLoop()
 {
   switch (_currentState)
   {
@@ -53,19 +111,14 @@ void Controller::loop()
       bool done = _spoolWinder->homingLoop();
       if (done)
       {
+
         changeState(ControllerStates::Idle);
-        changeState(ControllerStates::Running);
       }
     }
     break;
   case ControllerStates::Running:
   {
-    if (!_spoolWinder->loop())
-    {
-      Serial.println("Reached position... waiting");
-      delay(2000);
-      changeState(ControllerStates::Homing);
-    }
+    _spoolWinder->loop();
   }
     break;
   case ControllerStates::Idle:

@@ -19,9 +19,16 @@ class SpoolWinder
     bool homingLoop();
 
     void startLoop();
-    bool loop();
+    void loop();
 
   private:
+    enum States {
+      MoveToPositionA = 'A',
+      MoveToPositionB = 'B',
+    };
+
+    void changeState(States newState);
+
     MotorDefinition _spoolWinderMotorDef;
     MotorDefinition _filamentGuideMotorDef;
     int _filamentGuideEndStopPin;
@@ -31,6 +38,7 @@ class SpoolWinder
     StepperMotor* _spoolWinderStepper;
     StepperMotor* _filamentGuideStepper;
     StepperHomingHelper* _filemanetGuideHomingHelper;
+    States _currentState;
 };
 
 #endif

@@ -7,6 +7,16 @@
 #include "Constants.h"
 #include "../Drivers/StepperMotor.h"
 
+const static char* StatesNames[] = {
+  "Start", 
+  "EndStopTriggeredAtStart", 
+  "MoveTowardsEndStopFast", 
+  "EndStopTriggeredFirstTime", 
+  "Backup1000StepsAfterEndStopTriggered", 
+  "MoveTowardsEndStopSlow", 
+  "Done"
+};
+
 
 class StepperHomingHelper
 {
@@ -17,13 +27,13 @@ class StepperHomingHelper
 
   private:
     enum STATES { 
-      Start = 'S', 
-      EndStopTriggeredAtStart = 'X', 
-      MoveTowardsEndStopFast = 'F', 
-      EndStopTriggeredFirstTime = 'E',
-      Backup1000StepsAfterEndStopTriggered = 'B',
-      MoveTowardsEndStopSlow = 'M', 
-      Done = 'D'
+      Start = 0, 
+      EndStopTriggeredAtStart,
+      MoveTowardsEndStopFast,
+      EndStopTriggeredFirstTime,
+      Backup1000StepsAfterEndStopTriggered,
+      MoveTowardsEndStopSlow,
+      Done
     };
 
     void changeState(STATES newState);

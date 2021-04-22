@@ -40,26 +40,47 @@ bool SpoolWinder::homingLoop()
 
 void SpoolWinder::startLoop()
 {
-  _filamentGuideStepper->setRPM(NORMAL_RPM);
-  _filamentGuideStepper->setAbsoluteTargetPosition(-20000);
+  changeState(States::MoveToPositionA);
 }
 
-bool SpoolWinder::loop()
+void SpoolWinder::loop()
 {
-  return _filamentGuideStepper->runToPosition();
-  // if (_isWinding)
-  // {
-  //   int maxLimitValue = digitalRead(_maxLimitSwitchPin);
-  //   if (maxLimitValue > 0)
-  //     _isWinding = false;
-  // }
-  // else
-  // {
-  //   int minLimitValue = digitalRead(_minLimitSwitchPin);
-  //   if (minLimitValue > 0)
-  //     _isWinding = true;
-  // }
-    
-  // if (_isWinding)
-  //   _stepper->runSpeed();
+  switch (_currentState)
+  {
+  case States::MoveToPositionA:
+  {
+    if (!_filamentGuideStepper->runToPosition())
+      changeState(MoveToPositionB);
+  }
+    break;
+  case States::MoveToPositionB:
+  {
+    if (!_filamentGuideStepper->runToPosition())
+      changeState(MoveToPositionA);
+  }
+    break;
+  
+  default:
+    break;
+  }
+}
+
+void SpoolWinder::changeState(States newState)
+{
+  switch (newState)
+  {
+  case States::MoveToPositionA:
+    _filamentGuideStepper->setRPM(NORMAL_RPM);
+    _filamentGuideStepper->setAbsoluteTargetPosition(-30000);
+    _currentState = newState;
+  break;
+  case States::MoveToPositionB:
+    _filamentGuideStepper->setRPM(SLOW_RPM);
+    _filamentGuideStepper->setAbsoluteTargetPosition(-10000);
+    _currentState = newState;
+    break;
+  
+  default:
+    break;
+  }
 }

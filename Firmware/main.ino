@@ -7,7 +7,6 @@ void setup() {
   Serial.begin(115200);
 
   controller.setup();
-  controller.changeState(ControllerStates::Homing);
 }
 
 void loop() {
