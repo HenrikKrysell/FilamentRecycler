@@ -1,0 +1,149 @@
+{
+  "name": "frontend",
+  "version": "0.0.1",
+  "private": true,
+  "dependencies": {
+    "@apollo/client": "^3.0.0-beta.48",
+    "@apollo/link-ws": "^2.0.0-beta.3",
+    "@cryptoarsenal/react-date-range": "0.0.8",
+    "@testing-library/jest-dom": "^4.2.4",
+    "@testing-library/react": "^9.3.2",
+    "@testing-library/user-event": "^7.1.2",
+    "classnames": "^2.2.6",
+    "d3": "^6.6.0",
+    "date-fns": "^2.14.0",
+    "graphql": "^15.1.0",
+    "graphql.macro": "^1.4.2",
+    "i18next": "^19.5.0",
+    "i18next-browser-languagedetector": "^6.0.1",
+    "jest-large-snapshot-warning": "^0.1.0",
+    "lodash.isequal": "^4.5.0",
+    "moment": "^2.28.0",
+    "node-sass": "^4.14.1",
+    "oidc-client": "^1.10.1",
+    "prop-types": "^15.7.2",
+    "pullstate": "^1.13.2",
+    "rc-menu": "^8.3.1",
+    "rc-slider": "^9.3.0",
+    "react": "^16.13.1",
+    "react-chartjs-2": "^2.9.0",
+    "react-dom": "^16.13.1",
+    "react-i18next": "^11.5.1",
+    "react-modal": "^3.11.2",
+    "react-resize-detector": "^4.2.1",
+    "react-router-dom": "^5.1.2",
+    "react-scripts": "3.4.0",
+    "react-select": "^3.0.8",
+    "react-table": "^7.2.0",
+    "react-tooltip": "^4.2.7",
+    "reactjs-popup": "^1.5.0",
+    "styled-components": "^5.1.0",
+    "subscriptions-transport-ws": "^0.9.16",
+    "use-debounce": "^3.4.2"
+  },
+  "scripts": {
+    "start": "cross-env SKIP_PREFLIGHT_CHECK=true PORT=9025 react-scripts start",
+    "build": "cross-env SKIP_PREFLIGHT_CHECK=true react-scripts build",
+    "test": "cross-env SKIP_PREFLIGHT_CHECK=true react-scripts test --coverage",
+    "coverage-watch": "browser-sync start --config ./bs-config.js",
+    "eject": "react-scripts eject",
+    "lint": "npx eslint ./src/ --fix"
+  },
+  "eslintConfig": {
+    "env": {
+      "cypress/globals": true
+    },
+    "extends": [
+      "react-app",
+      "airbnb"
+    ],
+    "plugins": [
+      "jest",
+      "cypress"
+    ],
+    "rules": {
+      "max-len": [
+        1,
+        150,
+        2
+      ],
+      "react/jsx-filename-extension": [
+        1,
+        {
+          "extensions": [
+            ".js",
+            ".jsx"
+          ]
+        }
+      ],
+      "react/jsx-one-expression-per-line": 0,
+      "no-unused-expressions": 0
+    },
+    "ignorePatterns": [
+      "node_modules"
+    ]
+  },
+  "jest": {
+    "collectCoverageFrom": [
+      "src/**/*.{js,jsx,ts,tsx}",
+      "!<rootDir>/node_modules/",
+      "!src/**/*.test.js",
+      "!src/i18n.js",
+      "!src/serviceWorker.js",
+      "!output/**/*.js",
+      "!src/external_modules/**"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 0,
+        "functions": 0,
+        "lines": 0,
+        "statements": 0
+      }
+    },
+    "transform": {
+      "\\.(gql|graphql)$": "jest-transform-graphql",
+      ".*": "babel-jest"
+    },
+    "coverageReporters": [
+      "html"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">1%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "engines": {
+    "node": "^14"
+  },
+  "modulePathIgnorePatterns": [
+    "<rootDir>/.*/__mocks__"
+  ],
+  "devDependencies": {
+    "@babel/cli": "^7.8.4",
+    "@babel/core": "^7.10.2",
+    "babel-plugin-i18next-extract": "^0.7.2",
+    "babel-plugin-styled-components": "^1.10.7",
+    "browser-sync": "^2.26.7",
+    "cross-env": "^7.0.2",
+    "cypress": "^4.8.0",
+    "eslint-config-airbnb": "^18.1.0",
+    "eslint-plugin-cypress": "^2.10.3",
+    "eslint-plugin-import": "^2.21.2",
+    "eslint-plugin-jest": "^23.13.1",
+    "eslint-plugin-jsx-a11y": "^6.2.3",
+    "eslint-plugin-react": "^7.20.0",
+    "jest-html-reporter": "^3.1.3",
+    "jest-transform-graphql": "^2.1.0",
+    "mockdate": "^3.0.2",
+    "npm-check": "^5.9.2"
+  }
+}

@@ -1,7 +1,5 @@
 const express = require('express');
-const bodyParser = require('body-parser');
-const { graphqlExpress, graphiqlExpress } = require('apollo-server-express');
-const { makeExecutableSchema } = require('graphql-tools');
+const { ApolloServer, gql } = require('apollo-server-express');
 import { ControllerClient } from './utils';
 
 // Some fake data
@@ -16,24 +14,34 @@ const books = [
   },
 ];
 
-// The GraphQL schema in string form
-const typeDefs = `
-  type Query { books: [Book] }
+async function startApolloServer() {
+  // Construct a schema, using GraphQL schema language
+  const typeDefs = gql`
+  type Query { 
+    books: [Book] 
+    hello: String
+  }
   type Book { title: String, author: String }
-`;
+  `;
 
-// The resolvers
-const resolvers = {
-  Query: { books: () => books },
-};
+  // Provide resolver functions for your schema fields
+  const resolvers = {
+    Query: {
+      hello: () => 'Hello world!',
+      books: () => books,
+    },
+  };
 
-// Put together a schema
-const schema = makeExecutableSchema({
-  typeDefs,
-  resolvers,
-});
+  const server = new ApolloServer({ typeDefs, resolvers });
+  await server.start();
 
-//////////////////////////////////////////////////////////
+  const app = express();
+  server.applyMiddleware({ app });
+
+  await new Promise(resolve => app.listen({ port: 3000 }, resolve));
+  console.log(`🚀 Server ready at http://localhost:3000${server.graphqlPath}`);
+  return { server, app };
+}
 
 const sendRequest = async () => {
   try {
@@ -51,19 +59,4 @@ const sendRequest = async () => {
 
 setTimeout(sendRequest, 3000);
 
-//////////////////////////////////////////////////////////
-
-// Initialize the app
-const app = express();
-
-// The GraphQL endpoint
-app.use('/graphql', bodyParser.json(), graphqlExpress({ schema }));
-
-// GraphiQL, a visual editor for queries
-app.use('/graphiql', graphiqlExpress({ endpointURL: '/graphql' }));
-
-// Start the server
-app.listen(3000, () => {
-  console.log('Go to http://localhost:3000/graphiql to run queries!');
-});
-
+startApolloServer();
