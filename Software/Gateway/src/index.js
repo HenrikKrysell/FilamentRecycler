@@ -1,46 +1,27 @@
 const express = require('express');
 const { ApolloServer, gql } = require('apollo-server-express');
 import { ControllerClient } from './utils';
-
-// Some fake data
-const books = [
-  {
-    title: "Harry Potter2 and the Sorcerer's stone",
-    author: 'J.K. Rowling',
-  },
-  {
-    title: 'Jurassic Park',
-    author: 'Michael Crichton',
-  },
-];
+import { typeDefs, resolvers} from './graphql';
+import { createServer } from 'http';
 
 async function startApolloServer() {
-  // Construct a schema, using GraphQL schema language
-  const typeDefs = gql`
-  type Query { 
-    books: [Book] 
-    hello: String
-  }
-  type Book { title: String, author: String }
-  `;
-
-  // Provide resolver functions for your schema fields
-  const resolvers = {
-    Query: {
-      hello: () => 'Hello world!',
-      books: () => books,
-    },
-  };
-
-  const server = new ApolloServer({ typeDefs, resolvers });
-  await server.start();
+  const apolloServer = new ApolloServer({typeDefs, resolvers/*, subscriptions: { path: '/subscriptions' }*/});
+  //await server.start();
 
   const app = express();
-  server.applyMiddleware({ app });
+  apolloServer.applyMiddleware({ app });
 
-  await new Promise(resolve => app.listen({ port: 3000 }, resolve));
-  console.log(`🚀 Server ready at http://localhost:3000${server.graphqlPath}`);
-  return { server, app };
+  const httpServer = createServer(app);
+  apolloServer.installSubscriptionHandlers(httpServer);
+  
+  httpServer.listen({ port: process.env.PORT }, () =>{
+    console.log(`🚀 Server ready at http://localhost:${process.env.PORT}${apolloServer.graphqlPath}`)
+    console.log(`🚀 Subscriptions ready at ws://localhost:${process.env.PORT}${apolloServer.subscriptionsPath}`)
+  })
+  // await new Promise(resolve => app.listen({ port: process.env.PORT }, resolve));
+  // console.log(`🚀 Server ready at http://localhost:${process.env.PORT}${server.graphqlPath}`);
+  // console.log(`🚀 Subscriptions ready at ws://localhost:${process.env.PORT}${server.subscriptionsPath}`);  
+  return { apolloServer, app };
 }
 
 const sendRequest = async () => {

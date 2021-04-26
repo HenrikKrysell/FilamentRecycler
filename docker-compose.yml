@@ -26,12 +26,13 @@ services:
     working_dir: /usr/src/app
     environment:
       - CONTROLLER_ADDR=http://controller:5001/graphql
+      - PORT=3000
     volumes:
       - ./Software/Gateway:/usr/src/app
     networks:
       - app-network
 
-      frontend:
+  frontend:
     image: node:14
     restart: always
     command: ['yarn', 'run', 'start']

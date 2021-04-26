@@ -17,7 +17,7 @@ class Controller:
     while self.isRunning:
       sleep(0.001)
       if (time.time() - lastTime > 10):
-        print("controller...." + str(threading.get_ident()))
+        #print("controller...." + str(threading.get_ident()))
         lastTime = time.time()
 
     print("Closing")
