@@ -5,7 +5,7 @@ import { typeDefs, resolvers} from './graphql';
 import { createServer } from 'http';
 
 async function startApolloServer() {
-  const apolloServer = new ApolloServer({typeDefs, resolvers/*, subscriptions: { path: '/subscriptions' }*/});
+  const apolloServer = new ApolloServer({typeDefs, resolvers, subscriptions: { path: '/subscriptions' }});
   //await server.start();
 
   const app = express();
@@ -18,9 +18,6 @@ async function startApolloServer() {
     console.log(`🚀 Server ready at http://localhost:${process.env.PORT}${apolloServer.graphqlPath}`)
     console.log(`🚀 Subscriptions ready at ws://localhost:${process.env.PORT}${apolloServer.subscriptionsPath}`)
   })
-  // await new Promise(resolve => app.listen({ port: process.env.PORT }, resolve));
-  // console.log(`🚀 Server ready at http://localhost:${process.env.PORT}${server.graphqlPath}`);
-  // console.log(`🚀 Subscriptions ready at ws://localhost:${process.env.PORT}${server.subscriptionsPath}`);  
   return { apolloServer, app };
 }
 
