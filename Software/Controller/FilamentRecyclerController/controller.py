@@ -5,7 +5,19 @@ import serial.tools.list_ports
 import time
 import signal
 
+import os,sys
+sys.path.insert(1, os.path.join(sys.path[0], '..'))
+import constants
+
 class Controller:
+  def __init__(self, eventEmitter):
+    self.eventEmitter = eventEmitter
+
+    self.eventEmitter.on(constants.FRONTEND_BASE_MESSAGE+'test', self.__testHandler)
+
+  def __testHandler(self, args):
+    print("incomming message: {args}".format(args = args))
+    self.eventEmitter.emit(constants.SEND_TO_FRONTEND_MESSAGE, {"message": "HELLO FRONTEND!"})
 
   def getAllComports(self):
     return [comport.device for comport in serial.tools.list_ports.comports()]

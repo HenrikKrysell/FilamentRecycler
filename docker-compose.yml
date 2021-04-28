@@ -44,6 +44,8 @@ services:
     ports:
       - '9025:9025'
     stdin_open: true
+    networks:
+      - app-network
 
   postgres:
     image: postgres:12
@@ -54,7 +56,9 @@ services:
     - db_data:/var/lib/postgresql/data
     environment:
       POSTGRES_PASSWORD: postgrespassword
-
+    networks:
+      - app-network
+  
   hasura:
     image: hasura/graphql-engine:v1.3.3
     ports:

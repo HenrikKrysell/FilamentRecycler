@@ -1,6 +1,8 @@
 import signal
-from Webserver.webserver import Webserver
 from FilamentRecyclerController.controller import Controller
+from FrontendCommunication.FrontendComServer import FrontendComServer
+from pymitter import EventEmitter
+
 
 # Gracefully close the app when docker closes
 def handle_sigterm(*args):
@@ -8,9 +10,10 @@ def handle_sigterm(*args):
 signal.signal(signal.SIGTERM, handle_sigterm)
 
 if __name__ == '__main__':
-    print("main")
-    controller = Controller()
+    eventEmitter = EventEmitter()
+
+    controller = Controller(eventEmitter)
     controller.start()
 
-    webserver = Webserver()    
-    webserver.run(controller)
+    frontendComServer = FrontendComServer(eventEmitter)
+    frontendComServer.init(5001)
