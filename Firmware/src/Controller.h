@@ -3,9 +3,12 @@
 
 #include <Arduino.h>
 #include "DataStructures/motorDefinition.h"
-#include "SpoolWinder.h"
+#include "SpoolWinder/SpoolWinder.h"
 #include "SerialCommandParser.h"
 #include "DataStructures/Command.h"
+#include "Drivers/StepperMotor.h"
+#include "Utilities/IntervalTimer.h"
+#include <A4988.h>
 
 enum ControllerStates {
   Idle = 0,
@@ -31,11 +34,15 @@ class Controller
 
 
     ControllerStates _currentState;
-    MotorDefinition _spoolWinderMotorDef;
-    MotorDefinition _filamentGuideMotorDef;
+    MotorDefinition _pullerMotorDef;
     int _filamentGuideEndStopPin;
     SpoolWinder* _spoolWinder;
     SerialCommandParser _serialCommandParser;
+    StepperMotor* _pullerMotorStepper;
+    float _pullerRPM;
+    // DEBUG
+    IntervalTimer _intervalTimer;
+
 };
 
 #endif

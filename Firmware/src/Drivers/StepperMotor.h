@@ -7,7 +7,7 @@
 #include "../Utilities/Constants.h"
 
 
-class StepperMotor
+class StepperMotor : private A4988
 {
   public:
     StepperMotor(MotorDefinition motorDefinition);
@@ -16,6 +16,7 @@ class StepperMotor
     void start(int defaultRPM = NORMAL_RPM);
 
     void setRPM(float rpm);
+    float getRPM();
     void resetPosition();
 
     void startRunContinuous(int direction);
@@ -27,10 +28,17 @@ class StepperMotor
 
     void stop();
   private:
+    enum Mode {
+      IDLE = 0,
+      CONTINUOUS,
+      POSITION,
+    };
+
     MotorDefinition _motorDefinition;
-    A4988* _stepper;
     long _currentPosition;
-    long _nextActionTime;
+    long _timeUntilNextAction;
+    unsigned long _lastActionTime;
+    Mode _mode;
 };
 
 #endif
