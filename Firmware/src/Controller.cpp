@@ -24,6 +24,12 @@ void Controller::setup()
   _intervalTimer.setInterval(10000);
 
   Serial.println("Controller Setup Complete");
+  Serial.println("Avilable commands:");
+  for (int i = 0; i < CommandType::CommandTypeEnd; i++)
+  {
+    Serial.println(CommandExplanation[i]);
+  }
+  
 }
 
 void Controller::changeState(ControllerStates newState)
@@ -44,7 +50,7 @@ void Controller::changeState(ControllerStates newState)
 
         _spoolWinder->startLoop();
 
-        _pullerRPM = 1;
+        _pullerRPM = 50;
         _pullerMotorStepper->setRPM(_pullerRPM);
         _pullerMotorStepper->startRunContinuous(BACKWARD);
       }
@@ -94,6 +100,33 @@ void Controller::PerformCommand(Command cmd)
 
   }
   break;
+  case CommandType::MoveAxis:
+  {
+    if (_currentState != ControllerStates::Idle) {
+      Serial.println("ERROR: Can only move axis while in Idle");
+      return;
+    }
+
+    for (int i = 0; i < cmd.numParams; i++)
+    {
+      switch (cmd.parameters[i].name)
+      {
+      case 'W':
+        // Winder motor
+        //_spoolWinder->MoveAxis
+        break;
+      case 'G':
+        break;
+      case 'P':
+        break;
+      
+      default:
+        break;
+      }
+    }
+    
+  }
+  break;
   case  CommandType::SetTemperature:
   {
 
@@ -133,16 +166,16 @@ void Controller::StateMachineLoop()
   {
     if (_intervalTimer.isTriggered())
     {
-      char buffer[30];
-      _pullerMotorStepper->setRPM(_pullerRPM);
-      dtostrf(_pullerMotorStepper->getRPM(), 10, 6, buffer);
-      Serial.print("RPM: ");
-      Serial.println(buffer);
-      _pullerRPM += 10.0f;
+      // char buffer[30];
+      // _pullerMotorStepper->setRPM(_pullerRPM);
+      // dtostrf(_pullerMotorStepper->getRPM(), 10, 6, buffer);
+      // Serial.print("RPM: ");
+      // Serial.println(buffer);
+      // _pullerRPM += 10.0f;
     }
 
     _spoolWinder->loop();
-    _pullerMotorStepper->runContinuous();
+    //_pullerMotorStepper->runContinuous();
 
   }
     break;

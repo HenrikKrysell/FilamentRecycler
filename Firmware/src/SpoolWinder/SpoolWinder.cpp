@@ -104,7 +104,7 @@ void SpoolWinder::changeState(States newState)
     //_filamentGuideStepper->setAbsoluteTargetPosition(-10000);
     _filamentGuideStepper->setRPM(SUPER_SLOW_RPM);
 
-    _spoolWinderStepper->setRPM(NORMAL_RPM);
+    _spoolWinderStepper->setRPM(FAST_RPM);
     _spoolWinderStepper->startRunContinuous(FORWARD);
 
     _currentState = newState;
