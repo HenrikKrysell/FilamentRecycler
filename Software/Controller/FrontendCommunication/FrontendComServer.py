@@ -37,18 +37,9 @@ class FrontendComServer:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind((HOST, self.port))
         s.listen()
-        conn, addr = s.accept()
-        print('Connected by', addr)
-        client = ClientHandler(self.eventEmitter, conn)
-        client.init()
-        self.clients.append(client)
-        # with conn:
-        #     while True:
-        #         data = conn.recv(1024)
-        #         if not data:
-        #             break
-        #         print(data)
-        #         message = json.loads(data.decode('utf-8'))
-        #         print(message)
-        #         self.eventEmitter.emit(constants.FRONTEND_BASE_MESSAGE+message['topic'], message)
-        #         #conn.sendall(data)
+        while self.isRunning:
+          conn, addr = s.accept()
+          print('Connected by', addr)
+          client = ClientHandler(self.eventEmitter, conn)
+          client.init()
+          self.clients.append(client)

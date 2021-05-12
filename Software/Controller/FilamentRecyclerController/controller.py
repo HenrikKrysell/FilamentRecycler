@@ -17,7 +17,7 @@ class Controller:
 
   def __testHandler(self, args):
     print("incomming message: {args}".format(args = args))
-    self.eventEmitter.emit(constants.SEND_TO_FRONTEND_MESSAGE, {"message": "HELLO FRONTEND!"})
+    self.eventEmitter.emit(constants.MICROCONTROLLER_MESSAGE, {"message": "HELLO FRONTEND!"})
 
   def getAllComports(self):
     return [comport.device for comport in serial.tools.list_ports.comports()]
@@ -28,8 +28,9 @@ class Controller:
     lastTime = time.time()
     while self.isRunning:
       sleep(0.001)
-      if (time.time() - lastTime > 10):
+      if (time.time() - lastTime > 1):
         #print("controller...." + str(threading.get_ident()))
+        self.eventEmitter.emit(constants.CONTROLLER_STATE_MESSAGE, {"time": lastTime})
         lastTime = time.time()
 
     print("Closing")

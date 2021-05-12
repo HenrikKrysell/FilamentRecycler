@@ -13,6 +13,6 @@ const books = [
 ];
 
   export default {
-    hello: () => { pubsub.publish(subscriptionTopics.SERIAL_COM, { serialCommunication: { message: "Hello World!"}}); return 'Hello world!'},
+    hello: () => { pubsub.publish(subscriptionTopics.MICROCONTROLLER_COM, { microcontrollerCommunication: { message: "Hello World!"}}); return 'Hello world!'},
     books: () => books,
   };

@@ -6,15 +6,14 @@ import {
 } from '@apollo/client';
 import * as serviceWorker from './serviceWorker';
 import client from './apollo.client';
-import TestComponent from './components/TestComponent';
-import SerialConsole from './components/SerialConsole';
+import MicrocontrollerConsole from './components/MicrocontrollerConsole';
 
 ReactDOM.render(
   // eslint-disable-next-line no-undef
   <ApolloProvider client={client}>
     <React.StrictMode>
       <div>
-        <SerialConsole />
+        <MicrocontrollerConsole />
       </div>
     </React.StrictMode>
   </ApolloProvider>,

@@ -8,10 +8,15 @@ export default gql`
   type Book { title: String, author: String }
 
   type Subscription {
-    serialCommunication: SerialMessage
+    microcontrollerCommunication: MicrocontrollerMessage
+    controllerCommunication: ControllerMessage
   }
 
-  type SerialMessage {
+  type MicrocontrollerMessage {
+    message: String
+  }
+
+  type ControllerMessage {
     message: String
   }
 `;
