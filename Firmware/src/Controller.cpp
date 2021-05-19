@@ -5,30 +5,34 @@ Controller::Controller()
 {
   _currentState = ControllerStates::Idle;
   _spoolWinder = new SpoolWinder({.motorDirPin=33, .motorStepPin=31, .motorEnablePin=29}, {.motorDirPin=23, .motorStepPin=25, .motorEnablePin=27}, 24, A10);
-  _pullerMotorDef = {.motorDirPin=47, .motorStepPin=49, .motorEnablePin=48};
-  _pullerMotorStepper = new StepperMotor(_pullerMotorDef);
+  _filamentExtruder = new FilamentExtruder({.motorDirPin=47, .motorStepPin=49, .motorEnablePin=48});
+  _currentAction = NULL;
 }
 
 Controller::~Controller()
 {
   delete _spoolWinder;
-  delete _pullerMotorStepper;
+  delete _filamentExtruder;
 }
 
 void Controller::setup()
 {
   _spoolWinder->setup();
-  _pullerMotorStepper->start();
+  _filamentExtruder->setup();
+
+  _sendTelemetryTimer.setInterval(9999);
+  _telemetryDataVaribles[0] = '\0';
 
   // DEBUG
   _intervalTimer.setInterval(10000);
 
-  Serial.println("Controller Setup Complete");
-  Serial.println("Avilable commands:");
-  for (int i = 0; i < CommandType::CommandTypeEnd; i++)
-  {
-    Serial.println(CommandExplanation[i]);
-  }
+
+  // Serial.println("Controller Setup Complete");
+  // Serial.println("Avilable commands:");
+  // for (int i = 0; i < CommandType::CommandTypeEnd; i++)
+  // {
+  //   Serial.println(CommandExplanation[i]);
+  // }
   
 }
 
@@ -36,27 +40,34 @@ void Controller::changeState(ControllerStates newState)
 {
   switch (newState)
   {
-  case ControllerStates::Homing:
+  case ControllerStates::Stop:
     {
-      _spoolWinder->startHoming();
+      _spoolWinder->stop();
+      _filamentExtruder->stop();
       _currentState = newState;
+      if (_currentAction != NULL) {
+        sendActionResult(_currentAction->id, ResultActionParams::Stopped);
+        clearCurrentAction();
+      }
     }
     break;
-  case ControllerStates::Running:
+  case ControllerStates::PerformAction:
     {
       if (_currentState == ControllerStates::Idle)
       {
+        if (_currentAction == NULL) {
+          SerialSendError(ERROR_CONTROLLER_NO_ACTION_TO_PERFORM);
+          _currentState = ControllerStates::Stop;
+          break;
+        }
         _currentState = newState;
-
-        _spoolWinder->startLoop();
-
-        _pullerRPM = 50;
-        _pullerMotorStepper->setRPM(_pullerRPM);
-        _pullerMotorStepper->startRunContinuous(BACKWARD);
+        
+        _spoolWinder->startAction(_currentAction);
+        _filamentExtruder->startAction(_currentAction);
       }
       else 
       {
-        Serial.println("ERROR: Cannot change state to running unless we are in Idle state");
+        SerialSendError(ERROR_CONTROLLER_CANNOT_CHANGE_STATE);
       }
     }
     break;
@@ -64,79 +75,102 @@ void Controller::changeState(ControllerStates newState)
     _currentState = newState;
   break;
   default:  
-    Serial.print("ERROR: Invalid controller state: ");
-    Serial.println(newState);
+    SerialSendError(ERROR_CONTROLLER_INVALID_STATE, (int)newState);
     _currentState = ControllerStates::Idle;
     break;
   }
-
-  Serial.print("Controller state: ");
-  Serial.println(ControllerStatesNames[_currentState]);
 }
 
 void Controller::loop()
 {
-  Command cmd = _serialCommandParser.readIfDataPresent();
-  if (cmd.type != CommandType::Nothing)
-    PerformCommand(cmd);
+  Message* msg = _serialCommandParser.readIfDataPresent();
+  if (msg != NULL)
+    handleMessage(msg);
 
-  StateMachineLoop();
-}
-
-void Controller::PerformCommand(Command cmd)
-{
-  switch (cmd.type)
+  switch (_currentState)
   {
-  case CommandType::ChangeState:
+  case ControllerStates::PerformAction:
   {
-    if (cmd.parameters[0].name != 'S')
-      Serial.println("ERROR: Change state command only takes one parameter named S");
-    else
-      changeState((ControllerStates)cmd.parameters[0].intValue);
-  }
-  break;
-  case CommandType::SetSpeed:
-  {
-
-  }
-  break;
-  case CommandType::MoveAxis:
-  {
-    if (_currentState != ControllerStates::Idle) {
-      Serial.println("ERROR: Can only move axis while in Idle");
-      return;
+    if (_intervalTimer.isTriggered()) {
+      // char buffer[30];
+      // _pullerMotorStepper->setRPM(_pullerRPM);
+      // dtostrf(_pullerMotorStepper->getRPM(), 10, 6, buffer);
+      // Serial.print("RPM: ");
+      // Serial.println(buffer);
+      // _pullerRPM += 10.0f;
     }
 
-    for (int i = 0; i < cmd.numParams; i++)
-    {
-      switch (cmd.parameters[i].name)
-      {
-      case 'W':
-        // Winder motor
-        //_spoolWinder->MoveAxis
-        break;
-      case 'G':
-        break;
-      case 'P':
-        break;
-      
-      default:
-        break;
-      }
-    }
+    LoopStates spoolWinderState =_spoolWinder->loop();
+    LoopStates filamentExtruderState = _filamentExtruder->loop();
     
+    if (spoolWinderState == LoopStates::Done && filamentExtruderState == LoopStates::Done) {
+      if (_currentAction != NULL) {
+        sendActionResult(_currentAction->id, ResultActionParams::Success);
+        clearCurrentAction();
+      }
+      changeState(ControllerStates::Idle);
+    }
+    if (spoolWinderState == LoopStates::Error || filamentExtruderState == LoopStates::Error) {
+      if (_currentAction != NULL) {
+        sendActionResult(_currentAction->id, ResultActionParams::Error);
+        clearCurrentAction();
+      }
+      changeState(ControllerStates::Stop);
+    }
   }
   break;
-  case  CommandType::SetTemperature:
-  {
-
-  }
-  break;
-  case CommandType::Nothing:
+  case ControllerStates::Stop:
+  case ControllerStates::Idle:
+    break;
   default:
     break;
   }
 
+  sendTelemetryData();
+}
+
+void Controller::handleMessage(Message* msg)
+{
+  switch (msg->type)
+  {
+  case MessageType::Telemetry:
+  {
+    for (int i = 0; i < msg->numParams; i++) 
+    {
+      _telemetryDataVaribles[i] = msg->parameters[i].name;
+    }
+    _telemetryDataVaribles[msg->numParams] = '\0';
+
+  }
+  break;
+  case MessageType::PerformAction:
+  {
+    if (_currentState == ControllerStates::PerformAction) {
+      SerialSendError(ERROR_CONTROLLER_OPERATION_CANNOT_BE_PERFORMED_IN_CURRENT_STATE);
+      return;
+    }    
+
+    _currentAction = msg;    
+    msg = NULL;
+    changeState(ControllerStates::PerformAction);
+  }
+  break;
+  case  MessageType::SetParams:
+    setParams(msg);
+  break;
+  case MessageType::GetParams:
+    sendParams(msg);
+  break;
+  case MessageType::Stop:
+    changeState(ControllerStates::Stop);
+  break;
+  default:
+    break;
+  }
+
+  if (msg != NULL) {
+    delete msg;
+  }
   // Serial.println("== Command ==");
   // Serial.println(cmd.type);
   // for (int i = 0; i < cmd.numParams; i++)
@@ -149,39 +183,111 @@ void Controller::PerformCommand(Command cmd)
   // Serial.println("===========");
 }
 
-void Controller::StateMachineLoop()
-{
-  switch (_currentState)
-  {
-  case ControllerStates::Homing:
-    {
-      bool done = _spoolWinder->homingLoop();
-      if (done)
-      {
-        changeState(ControllerStates::Idle);
-      }
-    }
-    break;
-  case ControllerStates::Running:
-  {
-    if (_intervalTimer.isTriggered())
-    {
-      // char buffer[30];
-      // _pullerMotorStepper->setRPM(_pullerRPM);
-      // dtostrf(_pullerMotorStepper->getRPM(), 10, 6, buffer);
-      // Serial.print("RPM: ");
-      // Serial.println(buffer);
-      // _pullerRPM += 10.0f;
-    }
+void Controller::sendTelemetryData() {
+  if (_sendTelemetryTimer.isTriggered()) {
 
-    _spoolWinder->loop();
-    //_pullerMotorStepper->runContinuous();
+    if (_telemetryDataVaribles[0] == '\0')
+      return;
 
+    int index = 0;
+
+    Serial.print((char)MessageType::Telemetry);
+    while (_telemetryDataVaribles[index] != '\0')
+    {
+      Serial.print(" ");
+      Serial.print(_telemetryDataVaribles[index]);
+      sendParameterData(_telemetryDataVaribles[index]);
+
+      index++;
+    }
+    Serial.println();
   }
+}
+
+void Controller::sendParameterData(char parameterId)
+{
+    switch (parameterId)
+    {
+    case (char)GetParamsParams::ControllerState:
+      Serial.print((int)_currentState);
+      break;
+    case (char)GetParamsParams::ExtruderRPM:
+      Serial.print(-1);
+      break;
+    case (char)GetParamsParams::FilamentExtruderState:
+      Serial.print((int)_filamentExtruder->getFilamentExtruderState());
+      break;
+    case (char)GetParamsParams::FilamentGuidePos:
+      Serial.print(_spoolWinder->getFilamentGuidePosition());
+      break;
+    case (char)GetParamsParams::PullerRPM:
+      Serial.print(_filamentExtruder->getPullerRPM());
+      break;
+    case (char)GetParamsParams::SpoolWinderState:
+      Serial.print(-1);
+      break;
+    case (char)GetParamsParams::Temperature:
+      Serial.print(-1);
+      break;
+    case (char)GetParamsParams::ErrorCodes:
+    {
+    }
     break;
-  case ControllerStates::Idle:
-    break;
-  default:
-    break;
+    default:
+      break;
+    }
+}
+
+void Controller::sendParams(Message *msg)
+{
+  Serial.print((char)msg->type);
+  for (int i = 0; i < msg->numParams; i++) 
+  {
+    Serial.print(" ");
+    Serial.print(msg->parameters[i].name);
+    sendParameterData(msg->parameters[i].name);
+  }
+  Serial.println();
+}
+
+void Controller::setParams(Message *msg)
+{
+  for (int i = 0; i < msg->numParams; i++)
+  {
+    Parameter param = msg->parameters[i];
+    switch (param.name)
+    {
+    case (char)SetParamsParams::Temperature:
+      break;
+    case (char)SetParamsParams::TelemetryInterval:
+      _sendTelemetryTimer.setInterval(param.intValue);
+      break;
+    case (char)SetParamsParams::PullerRPM:
+      _filamentExtruder->setPullerRPM(param.floatValue);
+      break;
+    case (char)SetParamsParams::FilamentSpoolWidth:
+      break;
+    case (char)SetParamsParams::FilamentSpoolDiameter:
+      break;
+    case (char)SetParamsParams::FilamentGuideStopPos:
+      break;
+    case (char)SetParamsParams::FilamentGuideStartPos:
+      break;
+    case (char)SetParamsParams::FilamentGuideArmTopPosition:
+      break;
+    case (char)SetParamsParams::FilamentGuideArmBottomPosition:
+      break;
+    default:
+      break;
+    }
+  }
+  
+}
+
+void Controller::clearCurrentAction()
+{
+  if (_currentAction != NULL) {
+    delete _currentAction;
+    _currentAction = NULL;
   }
 }

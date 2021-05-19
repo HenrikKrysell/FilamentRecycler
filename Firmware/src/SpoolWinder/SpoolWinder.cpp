@@ -17,7 +17,7 @@ SpoolWinder::SpoolWinder(MotorDefinition spoolWinderMotorDef, MotorDefinition fi
 
   _potentiometer = new Potentiometer(tensionerPotentiometerPin, 500);
   _intervalTimer.setInterval(5000);
-  _currentState = States::Stoped;
+  _currentState = SpoolWinderStates::Stop;
 }
  
  SpoolWinder::~SpoolWinder()
@@ -36,92 +36,140 @@ void SpoolWinder::setup()
   _potentiometer->setup();
 }
 
-void SpoolWinder::startHoming()
+void SpoolWinder::startAction(Message* msg)
 {
-  _filemanetGuideHomingHelper->start();
-}
-
-bool SpoolWinder::homingLoop()
-{
-  return _filemanetGuideHomingHelper->loop();
-}
-
-void SpoolWinder::startLoop()
-{
-  changeState(States::Idle);
-}
-
-void SpoolWinder::loop()
-{
-  int potentiometerPosition = _potentiometer->fetchPosition();
-
-  // DEBUG
-  if (_intervalTimer.isTriggered())
+  switch (msg->subType)
   {
-    Serial.print("SpoolWinder potentiometer: ");
-    Serial.println(potentiometerPosition);
-  }
-
-  switch (_currentState)
+  case (int)PerformActionSubType::HomeAllAxes:
+    changeState(SpoolWinderStates::HomeAllAxes);
+    break;
+  case (int)PerformActionSubType::MoveAxisAbsolute:
   {
-  case States::SpoolSlow:
-  case States::SpoolFast:
-  {
-    _spoolWinderStepper->runContinuous();
-  }
-  case States::Idle:
-  {
-      if (potentiometerPosition >= POTENTIOMETER_MAX)
-        changeState(States::SpoolFast);
-      else if (potentiometerPosition >= POTENTIOMETER_MIDDLE)
-        changeState(States::SpoolSlow);
-
-      if (potentiometerPosition < POTENTIOMETER_MIN)
-        changeState(States::Idle);
+    long filamentGuidePosition = _filamentGuideStepper->getPosition();
+    long spoolWinderPosition = _spoolWinderStepper->getPosition();
+    getAxesValuesFromMessage(msg, spoolWinderPosition, filamentGuidePosition);
+    
+    _spoolWinderStepper->setAbsoluteTargetPosition(spoolWinderPosition);
+    _filamentGuideStepper->setAbsoluteTargetPosition(filamentGuidePosition);
+    changeState(SpoolWinderStates::MoveAxis);
   }
     break;
-  case States::Stoped:
+  case (int)PerformActionSubType::MoveAxisRelative:
+  {
+    long filamentGuidePosition = 0;
+    long spoolWinderPosition = 0;
+    getAxesValuesFromMessage(msg, spoolWinderPosition, filamentGuidePosition);
+    
+    _spoolWinderStepper->setRelativeTargetPosition(spoolWinderPosition);
+    _filamentGuideStepper->setRelativeTargetPosition(filamentGuidePosition);
+    changeState(SpoolWinderStates::MoveAxis);
+  }
+    break;
+  case (int)PerformActionSubType::Production:
+    changeState(SpoolWinderStates::ProductionWaitForSensor);
+    break;
   default:
     break;
   }
+  
+
 }
 
-void SpoolWinder::changeState(States newState)
+LoopStates SpoolWinder::loop()
+{
+  int potentiometerPosition = _potentiometer->fetchPosition();
+
+  LoopStates result = LoopStates::Working;
+
+  switch (_currentState)
+  {
+  case SpoolWinderStates::HomeAllAxes:
+  {
+    if (_filemanetGuideHomingHelper->loop())
+      result = LoopStates::Done;
+  }
+  break;
+  case SpoolWinderStates::MoveAxis:
+  {
+    bool spoolWinderDone =_spoolWinderStepper->runToPosition();
+    bool filamentGuideDone = _filamentGuideStepper->runToPosition();
+    if (spoolWinderDone && filamentGuideDone) {
+      result = LoopStates::Done;
+    }
+  }
+  break;
+  case SpoolWinderStates::ProductionSpool:
+  {
+    _spoolWinderStepper->runContinuous();
+    // TODO: FilamentGuide
+  }
+  case SpoolWinderStates::ProductionWaitForSensor:
+  {
+    if (potentiometerPosition >= POTENTIOMETER_MAX)
+      changeState(SpoolWinderStates::ProductionSpool);
+    else if (potentiometerPosition >= POTENTIOMETER_MIDDLE)
+      changeState(SpoolWinderStates::ProductionSpool);
+
+    if (potentiometerPosition < POTENTIOMETER_MIN)
+      changeState(SpoolWinderStates::ProductionWaitForSensor);
+  }
+  break;
+  case SpoolWinderStates::Idle:
+  case SpoolWinderStates::Stop:
+    result = LoopStates::Done;
+  default:
+    break;
+  }
+
+  return result;
+}
+
+void SpoolWinder::changeState(SpoolWinderStates newState)
 {
   if (newState == _currentState)
     return;
 
   switch (newState)
   {
-  case States::Idle:
+    case SpoolWinderStates::HomeAllAxes:
+      _filemanetGuideHomingHelper->start();
+    break;
+  case SpoolWinderStates::MoveAxis:
+  break;
+  case SpoolWinderStates::Stop:
+  case SpoolWinderStates::Idle:
     _filamentGuideStepper->stop();
 
     _spoolWinderStepper->stop();
-
-    _currentState = newState;
   break;
-  case States::SpoolSlow:
-    //_filamentGuideStepper->setAbsoluteTargetPosition(-10000);
-    _filamentGuideStepper->setRPM(SUPER_SLOW_RPM);
-
-    _spoolWinderStepper->setRPM(FAST_RPM);
-    _spoolWinderStepper->startRunContinuous(FORWARD);
-
-    _currentState = newState;
-    break;
-  case States::SpoolFast:
+  case SpoolWinderStates::ProductionSpool:
     _filamentGuideStepper->setRPM(FAST_RPM);
 
     _spoolWinderStepper->setRPM(FAST_RPM);
     _spoolWinderStepper->startRunContinuous(FORWARD);
-
-    _currentState = newState;
     break;
-  
+  case SpoolWinderStates::ProductionWaitForSensor:
+    break;
   default:
     break;
   }
 
-  Serial.print("SpoolWinder state: ");
-  Serial.println(SpoolWinderStatesNames[_currentState]);
+  _currentState = newState;
+}
+
+void SpoolWinder::stop() {
+  
+}
+
+void SpoolWinder::getAxesValuesFromMessage(Message* msg, long &spoolWinderPosition, long &filamentGuidePosition)
+{
+    for (int i = 0; i < msg->numParams; i++)
+    {
+      if (msg->parameters[i].name == (char)MoveAxisActionParams::FilamentGuide) {
+        filamentGuidePosition = msg->parameters[i].intValue;
+      }
+      if (msg->parameters[i].name == (char)MoveAxisActionParams::FilamentSpooler) {
+        spoolWinderPosition = msg->parameters[i].intValue;
+      }
+    }
 }

@@ -1,8 +1,7 @@
 #ifndef Constants_h
 #define Constants_h
 
-// using a 200-step motor (most common)
-#define MOTOR_STEPS 200
+#define MOTOR_STEPS 200 // 200 step or 1.8 degree stepper motor
 #define MICROSTEPS 16
 #define MICROS_DIFF_INTERVAL 20
 

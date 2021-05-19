@@ -4,18 +4,23 @@
 #include <Arduino.h>
 #include "DataStructures/motorDefinition.h"
 #include "SpoolWinder/SpoolWinder.h"
-#include "SerialCommandParser.h"
-#include "DataStructures/Command.h"
 #include "Drivers/StepperMotor.h"
 #include "Utilities/IntervalTimer.h"
 #include <A4988.h>
+#include "FilamentExtruder.h"
+#include "CommunicationProtocol/SerialCommandParser.h"
+#include "CommunicationProtocol/Protocol.h"
+#include "CommunicationProtocol/Errors.h"
+#include "CommunicationProtocol/PerformAction.h"
+#include "CommunicationProtocol/SetParams.h"
+#include "CommunicationProtocol/GetParams.h"
 
-enum ControllerStates {
+enum class ControllerStates {
   Idle = 0,
-  Homing = 1,
-  Running = 2,
+  Stop = 1,
+  PerformAction = 2,
 };
-const static char* ControllerStatesNames[] = { "0:Idle", "1:Homing", "2:Running" };
+const static char* ControllerStatesNames[] = { "0:Idle", "1:Stop", "2:PerformCommad" };
 
 class Controller
 {
@@ -29,8 +34,12 @@ class Controller
     void changeState(ControllerStates newState);
 
   private:
-    void PerformCommand(Command cmd);
-    void StateMachineLoop();
+    void handleMessage(Message* msg);
+    void sendTelemetryData();
+    void sendParameterData(char parameterId);
+    void sendParams(Message *msg);
+    void setParams(Message *msg);
+    void clearCurrentAction();
 
 
     ControllerStates _currentState;
@@ -38,8 +47,10 @@ class Controller
     int _filamentGuideEndStopPin;
     SpoolWinder* _spoolWinder;
     SerialCommandParser _serialCommandParser;
-    StepperMotor* _pullerMotorStepper;
-    float _pullerRPM;
+    FilamentExtruder* _filamentExtruder;
+    IntervalTimer _sendTelemetryTimer;
+    char _telemetryDataVaribles[20];
+    Message* _currentAction;
     // DEBUG
     IntervalTimer _intervalTimer;
 

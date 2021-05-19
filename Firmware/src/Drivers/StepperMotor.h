@@ -27,8 +27,13 @@ class StepperMotor : private A4988
     bool runToPosition();
 
     void stop();
+
+    inline long getPosition() __attribute__((always_inline)) {
+        return _currentPosition;
+    };
+
   private:
-    enum Mode {
+    enum class Mode {
       IDLE = 0,
       CONTINUOUS,
       POSITION,

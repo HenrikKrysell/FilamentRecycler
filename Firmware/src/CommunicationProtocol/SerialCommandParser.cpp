@@ -3,34 +3,39 @@
 SerialCommandParser::SerialCommandParser()
 {
   _bufferIndex = 0;
+  _discardCurrentMessage = false;
 }
 
 SerialCommandParser::~SerialCommandParser()
 {
 }
 
-Command SerialCommandParser::readIfDataPresent()
+Message* SerialCommandParser::readIfDataPresent()
 {
-  Command cmd;
-  cmd.type = CommandType::Nothing;
-
   int numAvailable = Serial.available();
   if (numAvailable > 0)
   {
     _buffer[_bufferIndex] = Serial.read();
     
-    if (_buffer[0] != _commandStartChar)
+    if (_buffer[_bufferIndex] == '\r' || _buffer[_bufferIndex] == '\n')
     {
-      _bufferIndex = 0;
-    }
-    else if (_buffer[_bufferIndex] == '\r' || _buffer[_bufferIndex] == '\n')
-    {
-      int index = 0;
-      Parameter cmdParam = parseParameter(index);
-      cmd.type = (CommandType)cmdParam.intValue;
+      if (_discardCurrentMessage) {
+        _bufferIndex = 0;
+        return NULL;
+      }
 
-      cmd.numParams = 0;
-      while (cmd.numParams < MAX_PARAMETERS && index < _bufferIndex)
+      Message *msg = new Message();
+      int index = 0;
+      msg->type = (MessageType)_buffer[index++];
+      msg->subType = -1;
+      msg->id = -1;
+      if (_buffer[index] != ' ') {
+        Parameter cmdParam = parseParameter(index);
+        msg->subType = cmdParam.intValue;
+      }
+
+      msg->numParams = 0;
+      while (msg->numParams < MAX_PARAMETERS && index < _bufferIndex)
       {
         if (_buffer[index] == ' ')
         {
@@ -41,15 +46,22 @@ Command SerialCommandParser::readIfDataPresent()
         Parameter param = parseParameter(index);
         if (param.name < 'A' || param.name > 'Z')
         {
-          Serial.println("ERROR: Invalid parameter name");
-          cmd.type = CommandType::Nothing;
+          SerialSendError(ERROR_INVALID_PARAMETER_NAME);
+          delete msg;
           _bufferIndex = 0;
+          return NULL;
+        }
+
+        if (param.name == ID_PARAMETER_PREFIX) {
+          msg->id = param.intValue;
           break;
         }
-        cmd.parameters[cmd.numParams++] = param;
+
+        msg->parameters[msg->numParams++] = param;
       }
       
       _bufferIndex = 0;
+      return msg;
     }
     else
     {
@@ -57,13 +69,14 @@ Command SerialCommandParser::readIfDataPresent()
 
       if (_bufferIndex > _bufferSize)
       {
-        Serial.println("ERROR: command too long, discarding command");
+        SerialSendError(ERROR_COMMAND_TOO_LONG);
+        _discardCurrentMessage = true;
         _bufferIndex = 0;
       }
     }
   }
 
-  return cmd;
+  return NULL;
 }
 
 Parameter SerialCommandParser::parseParameter(int& index)

@@ -97,7 +97,7 @@ bool StepperMotor::runToPosition()
     _mode = Mode::IDLE;
   }
 
-  return _timeUntilNextAction > 0;
+  return _timeUntilNextAction <= 0;
 }
 
 void StepperMotor::stop()
