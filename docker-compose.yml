@@ -14,6 +14,8 @@ services:
       - ./Software/Controller:/usr/src/app
     networks:
       - app-network
+    devices:
+      - "/dev/ttyUSB0:/dev/ttyUSB0"
       
   gateway:
     build:

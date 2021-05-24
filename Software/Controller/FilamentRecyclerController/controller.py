@@ -1,7 +1,5 @@
 import threading
 from time import sleep
-import serial
-import serial.tools.list_ports
 import time
 import signal
 
@@ -17,14 +15,8 @@ class Controller:
 
   def __testHandler(self, args):
     print("incomming message: {args}".format(args = args))
-    self.eventEmitter.emit(constants.MICROCONTROLLER_MESSAGE, {"message": "HELLO FRONTEND!"})
-
-  def getAllComports(self):
-    return [comport.device for comport in serial.tools.list_ports.comports()]
 
   def __run(self):
-    print([comport.device for comport in serial.tools.list_ports.comports()])
-
     lastTime = time.time()
     while self.isRunning:
       sleep(0.001)
