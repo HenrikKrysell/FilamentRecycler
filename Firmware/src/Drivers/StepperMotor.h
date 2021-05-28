@@ -32,6 +32,14 @@ class StepperMotor : private A4988
         return _currentPosition;
     };
 
+    inline short getSteps() __attribute__((always_inline)) {
+        return A4988::getSteps();
+    };
+
+    inline short getMicrostep() __attribute__((always_inline)) {
+        return A4988::getMicrostep();
+    };
+
   private:
     enum class Mode {
       IDLE = 0,

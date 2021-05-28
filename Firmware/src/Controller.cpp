@@ -53,7 +53,7 @@ void Controller::changeState(ControllerStates newState)
     break;
   case ControllerStates::PerformAction:
     {
-      if (_currentState == ControllerStates::Idle)
+      if (_currentState == ControllerStates::Idle || _currentState == ControllerStates::Stop)
       {
         if (_currentAction == NULL) {
           SerialSendError(ERROR_CONTROLLER_NO_ACTION_TO_PERFORM);
@@ -102,7 +102,6 @@ void Controller::loop()
 
     LoopStates spoolWinderState =_spoolWinder->loop();
     LoopStates filamentExtruderState = _filamentExtruder->loop();
-    
     if (spoolWinderState == LoopStates::Done && filamentExtruderState == LoopStates::Done) {
       if (_currentAction != NULL) {
         sendActionResult(_currentAction->id, ResultActionParams::Success);
@@ -110,7 +109,7 @@ void Controller::loop()
       }
       changeState(ControllerStates::Idle);
     }
-    if (spoolWinderState == LoopStates::Error || filamentExtruderState == LoopStates::Error) {
+    else if (spoolWinderState == LoopStates::Error || filamentExtruderState == LoopStates::Error) {
       if (_currentAction != NULL) {
         sendActionResult(_currentAction->id, ResultActionParams::Error);
         clearCurrentAction();
@@ -121,6 +120,8 @@ void Controller::loop()
   break;
   case ControllerStates::Stop:
   case ControllerStates::Idle:
+    _spoolWinder->stop();
+    _filamentExtruder->stop();
     break;
   default:
     break;
@@ -150,8 +151,11 @@ void Controller::handleMessage(Message* msg)
       return;
     }    
 
-    _currentAction = msg;    
+    _currentAction = msg;
     msg = NULL;
+    _spoolWinder->startAction(_currentAction);
+    _filamentExtruder->startAction(_currentAction);
+
     changeState(ControllerStates::PerformAction);
   }
   break;
@@ -229,6 +233,12 @@ void Controller::sendParameterData(char parameterId)
     case (char)GetParamsParams::Temperature:
       Serial.print(-1);
       break;
+    case (char)GetParamsParams::FilamentGuideStepsPerSpoolRevolution:
+      Serial.print(_spoolWinder->getFilamentGuideStepsPerSpoolRevolution());
+      break;
+    case (char)GetParamsParams::SpoolWinderNumStepsPerRevolution:
+      Serial.print(_spoolWinder->getSpoolWinderNumStepsPerRevolution());
+      break;
     case (char)GetParamsParams::ErrorCodes:
     {
     }
@@ -260,23 +270,29 @@ void Controller::setParams(Message *msg)
     case (char)SetParamsParams::Temperature:
       break;
     case (char)SetParamsParams::TelemetryInterval:
-      _sendTelemetryTimer.setInterval(param.intValue);
+      _sendTelemetryTimer.setInterval(param.longValue);
       break;
     case (char)SetParamsParams::PullerRPM:
       _filamentExtruder->setPullerRPM(param.floatValue);
       break;
     case (char)SetParamsParams::FilamentSpoolWidth:
+      _spoolWinder->setFilamentSpoolWidth(param.longValue);
       break;
     case (char)SetParamsParams::FilamentSpoolDiameter:
+      _spoolWinder->setFilamentSpoolDiameter(param.longValue);
       break;
     case (char)SetParamsParams::FilamentGuideStopPos:
+      _spoolWinder->setFilamentGuideStopPos(param.longValue);
       break;
     case (char)SetParamsParams::FilamentGuideStartPos:
+      _spoolWinder->setFilamentGuideStartPos(param.longValue);
       break;
     case (char)SetParamsParams::FilamentGuideArmTopPosition:
       break;
     case (char)SetParamsParams::FilamentGuideArmBottomPosition:
       break;
+    case (char)SetParamsParams::SpoolWinderGearRatio:
+      _spoolWinder->setSpoolWinderGearRatio(param.longValue);
     default:
       break;
     }

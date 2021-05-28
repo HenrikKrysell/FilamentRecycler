@@ -11,6 +11,8 @@ enum class GetParamsParams {
     Temperature = 'T',
     FilamentGuidePos = 'G',     
     ErrorCodes = 'R',
+    FilamentGuideStepsPerSpoolRevolution = 'A',
+    SpoolWinderNumStepsPerRevolution = 'B',
 };
 
 #endif

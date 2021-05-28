@@ -16,7 +16,6 @@ SpoolWinder::SpoolWinder(MotorDefinition spoolWinderMotorDef, MotorDefinition fi
   _isWinding = false;
 
   _potentiometer = new Potentiometer(tensionerPotentiometerPin, 500);
-  _intervalTimer.setInterval(5000);
   _currentState = SpoolWinderStates::Stop;
 }
  
@@ -34,6 +33,15 @@ void SpoolWinder::setup()
   _spoolWinderStepper->start();
   _filamentGuideStepper->start();
   _potentiometer->setup();
+
+  // DEBUG
+  setFilamentGuideStartPos(-9000);
+  setFilamentGuideStopPos(-31000);
+
+  setFilamentSpoolDiameter(68);
+  setFilamentSpoolWidth(55);
+
+  setSpoolWinderGearRatio(16);
 }
 
 void SpoolWinder::startAction(Message* msg)
@@ -66,7 +74,14 @@ void SpoolWinder::startAction(Message* msg)
   }
     break;
   case (int)PerformActionSubType::Production:
+    _lastStepCountGuideMoved = _spoolWinderStepper->getPosition();
+    _filamentGuideDirection = -1;
+    _numRevolutionsThisLayer = 0;
+    _numLayers = 0;
     changeState(SpoolWinderStates::ProductionWaitForSensor);
+    break;
+  case (int)PerformActionSubType::UnwindSpool:
+    changeState(SpoolWinderStates::UnwindSpool);
     break;
   default:
     break;
@@ -85,8 +100,9 @@ LoopStates SpoolWinder::loop()
   {
   case SpoolWinderStates::HomeAllAxes:
   {
-    if (_filemanetGuideHomingHelper->loop())
+    if (_filemanetGuideHomingHelper->loop()) {
       result = LoopStates::Done;
+    }
   }
   break;
   case SpoolWinderStates::MoveAxis:
@@ -100,11 +116,48 @@ LoopStates SpoolWinder::loop()
   break;
   case SpoolWinderStates::ProductionSpool:
   {
+
     _spoolWinderStepper->runContinuous();
     // TODO: FilamentGuide
   }
   case SpoolWinderStates::ProductionWaitForSensor:
   {
+    _filamentGuideStepper->runToPosition();
+
+    long stepDiff = _spoolWinderStepper->getPosition() - _lastStepCountGuideMoved;
+    if (stepDiff >= _spoolWinderNumStepsPerRevolution) {
+      _lastStepCountGuideMoved = _spoolWinderStepper->getPosition();
+
+      Serial.println("Inside!");
+      // long guidePos = _filamentGuideStepper->getPosition();
+      // if (abs(guidePos - _filamentGuideStopPos) < _filamentGuideStepsPerSpoolRevolution) {
+      //   // We have reached the end, turn around
+      //   // But we want to stay for one more revolution to start the next layer at the same spot.
+      //   // Adding one here will make it go from -1 to 0 and then next revolution from 0 to 1 and start moving again.
+      //   _filamentGuideDirection++;
+      // }
+      // if (abs(guidePos - _filamentGuideStartPos) < _filamentGuideStepsPerSpoolRevolution) {
+      //   // We are at the start, turn around
+      //   // But we want to stay for one more revolution to start the next layer at the same spot.
+      //   // Adding one here will make it go from -1 to 0 and then next revolution from 0 to 1 and start moving again.
+      //   _filamentGuideDirection--;
+      // }
+      _numRevolutionsThisLayer++;
+      if (_numRevolutionsThisLayer >= _numRevolutionsPerLayer) {
+        _numLayers++;
+        _numRevolutionsThisLayer = 0;
+        // Turn around, but we want to stay for one more revolution to start the next layer at the same spot.
+        // Adding one here will make it go from -1 to 0 and then next revolution from 0 to 1 and start moving again.
+        _filamentGuideDirection *= -1;
+      }
+      else {
+        Serial.print("setRelativeTargetPosition: ");
+        Serial.println(_filamentGuideDirection);
+        Serial.println(_filamentGuideStepsPerSpoolRevolution);
+        _filamentGuideStepper->setRelativeTargetPosition(_filamentGuideDirection * _filamentGuideStepsPerSpoolRevolution);
+      }
+    }
+
     if (potentiometerPosition >= POTENTIOMETER_MAX)
       changeState(SpoolWinderStates::ProductionSpool);
     else if (potentiometerPosition >= POTENTIOMETER_MIDDLE)
@@ -114,6 +167,9 @@ LoopStates SpoolWinder::loop()
       changeState(SpoolWinderStates::ProductionWaitForSensor);
   }
   break;
+  case SpoolWinderStates::UnwindSpool:
+    _spoolWinderStepper->runContinuous();
+    break;
   case SpoolWinderStates::Idle:
   case SpoolWinderStates::Stop:
     result = LoopStates::Done;
@@ -150,6 +206,10 @@ void SpoolWinder::changeState(SpoolWinderStates newState)
     break;
   case SpoolWinderStates::ProductionWaitForSensor:
     break;
+  case SpoolWinderStates::UnwindSpool:
+    _spoolWinderStepper->setRPM(FAST_RPM);
+    _spoolWinderStepper->startRunContinuous(BACKWARD);
+    break;
   default:
     break;
   }
@@ -166,10 +226,10 @@ void SpoolWinder::getAxesValuesFromMessage(Message* msg, long &spoolWinderPositi
     for (int i = 0; i < msg->numParams; i++)
     {
       if (msg->parameters[i].name == (char)MoveAxisActionParams::FilamentGuide) {
-        filamentGuidePosition = msg->parameters[i].intValue;
+        filamentGuidePosition = msg->parameters[i].longValue;
       }
       if (msg->parameters[i].name == (char)MoveAxisActionParams::FilamentSpooler) {
-        spoolWinderPosition = msg->parameters[i].intValue;
+        spoolWinderPosition = msg->parameters[i].longValue;
       }
     }
 }

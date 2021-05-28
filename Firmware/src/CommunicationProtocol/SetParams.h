@@ -12,6 +12,7 @@ enum class SetParamsParams {
     FilamentGuideStopPos = 'O',
     FilamentGuideArmBottomPosition = 'B',
     FilamentGuideArmTopPosition = 'A',
+    SpoolWinderGearRatio = 'G'
 };
 
 #endif

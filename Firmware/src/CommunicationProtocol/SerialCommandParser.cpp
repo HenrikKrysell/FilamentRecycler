@@ -26,13 +26,10 @@ Message* SerialCommandParser::readIfDataPresent()
 
       Message *msg = new Message();
       int index = 0;
-      msg->type = (MessageType)_buffer[index++];
-      msg->subType = -1;
+      Parameter cmdParam = parseParameter(index);
+      msg->type = (MessageType)cmdParam.name;
+      msg->subType = cmdParam.longValue;
       msg->id = -1;
-      if (_buffer[index] != ' ') {
-        Parameter cmdParam = parseParameter(index);
-        msg->subType = cmdParam.intValue;
-      }
 
       msg->numParams = 0;
       while (msg->numParams < MAX_PARAMETERS && index < _bufferIndex)
@@ -53,8 +50,8 @@ Message* SerialCommandParser::readIfDataPresent()
         }
 
         if (param.name == ID_PARAMETER_PREFIX) {
-          msg->id = param.intValue;
-          break;
+          msg->id = param.longValue;
+          continue;
         }
 
         msg->parameters[msg->numParams++] = param;
@@ -91,7 +88,7 @@ Parameter SerialCommandParser::parseParameter(int& index)
   }
 
   float floatValue = 0.0f;
-  int intValue = 0;
+  long longValue = 0;
   while (index < _bufferIndex)
   {
     char currentChar = _buffer[index];
@@ -99,7 +96,7 @@ Parameter SerialCommandParser::parseParameter(int& index)
       break;
 
     floatValue = floatValue * 10.0f + (currentChar - '0');
-    intValue = intValue * 10 + (currentChar - '0');
+    longValue = longValue * 10 + (currentChar - '0');
     index++;
   }
   if (_buffer[index] == '.')
@@ -123,6 +120,6 @@ Parameter SerialCommandParser::parseParameter(int& index)
   Parameter param;
   param.name = name;
   param.floatValue = negativeValue ? -floatValue : floatValue;
-  param.intValue = negativeValue ? -intValue : intValue;
+  param.longValue = negativeValue ? -longValue : longValue;
   return param;
 }

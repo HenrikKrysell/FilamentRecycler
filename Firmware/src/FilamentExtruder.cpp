@@ -6,7 +6,7 @@ FilamentExtruder::FilamentExtruder(MotorDefinition pullerMotorDef)
   _currentState = FilamentExtruderStates::Idle;
   _pullerMotorDef = pullerMotorDef;
   _pullerMotorStepper = new StepperMotor(_pullerMotorDef);
-  _pullerRPM = 50;
+  _pullerRPM = 40;
 }
 
 FilamentExtruder::~FilamentExtruder()
@@ -21,6 +21,17 @@ void FilamentExtruder::setup()
 
 LoopStates FilamentExtruder::loop()
 {
+  switch (_currentState)
+  {
+  case FilamentExtruderStates::Running:
+    _pullerMotorStepper->runContinuous();
+    return LoopStates::Working;
+    break;
+  default:
+    break;
+  }
+
+  return LoopStates::Done;
 }
 
 void FilamentExtruder::startAction(Message* msg)
@@ -75,5 +86,5 @@ void FilamentExtruder::changeState(FilamentExtruderStates newState)
 }
 
 void FilamentExtruder::stop() {
-  
+ changeState(FilamentExtruderStates::Stop);
 }

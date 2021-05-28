@@ -5,12 +5,14 @@
 
 // NOTE! prefix 'I' is reserved for message ID field
 enum class PerformActionSubType {
-    Result = 0,
+    None = 0,
     Production = 1,
     HomeAllAxes = 2,
     PreHeat = 3,
     MoveAxisRelative = 4,
     MoveAxisAbsolute = 5,
+    Result = 6,
+    UnwindSpool = 7,
 };
 
 // NOTE! prefix 'I' is reserved for message ID field
@@ -30,12 +32,12 @@ enum class MoveAxisActionParams {
 inline void sendActionResult(int id, ResultActionParams result) 
 {
     Serial.print((char)MessageType::PerformAction);
-    Serial.print((char)PerformActionSubType::Result);
+    Serial.print((int)PerformActionSubType::Result);
     Serial.print(" ");
     Serial.print(ID_PARAMETER_PREFIX);
     Serial.print(id);
     Serial.print(" ");
-    Serial.print((char)result);
+    Serial.println((char)result);
 }
 
 #endif

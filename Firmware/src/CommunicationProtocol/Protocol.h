@@ -1,3 +1,7 @@
+// Examples:
+// Home: A2 I1
+// Move To position: A5 G-9500
+// Production: A1 I2
 #ifndef Protocol_h
 #define Protocol_h
 
@@ -16,7 +20,7 @@ enum class MessageType {
 struct Parameter {
   char name;
   float floatValue;
-  int intValue;
+  long longValue;
 };
 
 struct Message {

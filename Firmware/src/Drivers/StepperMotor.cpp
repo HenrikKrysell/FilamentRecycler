@@ -90,7 +90,9 @@ bool StepperMotor::runToPosition()
   {
     _timeUntilNextAction = nextAction();
     _lastActionTime = micros();
+    if (_timeUntilNextAction > 0) {
     _currentPosition += getDirection();
+    }
   }
 
   if (_timeUntilNextAction <= 0) {
