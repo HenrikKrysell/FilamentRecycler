@@ -10,7 +10,7 @@ SerialCommandParser::~SerialCommandParser()
 {
 }
 
-Message* SerialCommandParser::readIfDataPresent()
+IncommingMessage* SerialCommandParser::readIfDataPresent()
 {
   int numAvailable = Serial.available();
   if (numAvailable > 0)
@@ -24,10 +24,10 @@ Message* SerialCommandParser::readIfDataPresent()
         return NULL;
       }
 
-      Message *msg = new Message();
+      IncommingMessage *msg = new IncommingMessage();
       int index = 0;
       Parameter cmdParam = parseParameter(index);
-      msg->type = (MessageType)cmdParam.name;
+      msg->type = (IncommingMessageType)cmdParam.name;
       msg->subType = cmdParam.longValue;
       msg->id = -1;
 

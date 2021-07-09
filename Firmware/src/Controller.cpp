@@ -46,7 +46,7 @@ void Controller::changeState(ControllerStates newState)
       _filamentExtruder->stop();
       _currentState = newState;
       if (_currentAction != NULL) {
-        sendActionResult(_currentAction->id, ResultActionParams::Stopped);
+        sendAck(_currentAction->id, AckResultParams::Stopped);
         clearCurrentAction();
       }
     }
@@ -83,7 +83,7 @@ void Controller::changeState(ControllerStates newState)
 
 void Controller::loop()
 {
-  Message* msg = _serialCommandParser.readIfDataPresent();
+  IncommingMessage* msg = _serialCommandParser.readIfDataPresent();
   if (msg != NULL)
     handleMessage(msg);
 
@@ -104,14 +104,14 @@ void Controller::loop()
     LoopStates filamentExtruderState = _filamentExtruder->loop();
     if (spoolWinderState == LoopStates::Done && filamentExtruderState == LoopStates::Done) {
       if (_currentAction != NULL) {
-        sendActionResult(_currentAction->id, ResultActionParams::Success);
+        sendAck(_currentAction->id, AckResultParams::Success);
         clearCurrentAction();
       }
       changeState(ControllerStates::Idle);
     }
     else if (spoolWinderState == LoopStates::Error || filamentExtruderState == LoopStates::Error) {
       if (_currentAction != NULL) {
-        sendActionResult(_currentAction->id, ResultActionParams::Error);
+        sendAck(_currentAction->id, AckResultParams::Error);
         clearCurrentAction();
       }
       changeState(ControllerStates::Stop);
@@ -130,11 +130,11 @@ void Controller::loop()
   sendTelemetryData();
 }
 
-void Controller::handleMessage(Message* msg)
+void Controller::handleMessage(IncommingMessage* msg)
 {
   switch (msg->type)
   {
-  case MessageType::Telemetry:
+  case IncommingMessageType::SetTelemtryParams:
   {
     for (int i = 0; i < msg->numParams; i++) 
     {
@@ -144,7 +144,7 @@ void Controller::handleMessage(Message* msg)
 
   }
   break;
-  case MessageType::PerformAction:
+  case IncommingMessageType::PerformAction:
   {
     if (_currentState == ControllerStates::PerformAction) {
       SerialSendError(ERROR_CONTROLLER_OPERATION_CANNOT_BE_PERFORMED_IN_CURRENT_STATE);
@@ -159,13 +159,13 @@ void Controller::handleMessage(Message* msg)
     changeState(ControllerStates::PerformAction);
   }
   break;
-  case  MessageType::SetParams:
+  case  IncommingMessageType::SetParams:
     setParams(msg);
   break;
-  case MessageType::GetParams:
+  case IncommingMessageType::GetParams:
     sendParams(msg);
   break;
-  case MessageType::Stop:
+  case IncommingMessageType::Stop:
     changeState(ControllerStates::Stop);
   break;
   default:
@@ -195,7 +195,7 @@ void Controller::sendTelemetryData() {
 
     int index = 0;
 
-    Serial.print((char)MessageType::Telemetry);
+    Serial.print((char)OutgoingMessageType::Telemetry);
     while (_telemetryDataVaribles[index] != '\0')
     {
       Serial.print(" ");
@@ -248,9 +248,9 @@ void Controller::sendParameterData(char parameterId)
     }
 }
 
-void Controller::sendParams(Message *msg)
+void Controller::sendParams(IncommingMessage *msg)
 {
-  Serial.print((char)msg->type);
+  Serial.print((char)OutgoingMessageType::GetParams);
   for (int i = 0; i < msg->numParams; i++) 
   {
     Serial.print(" ");
@@ -260,7 +260,7 @@ void Controller::sendParams(Message *msg)
   Serial.println();
 }
 
-void Controller::setParams(Message *msg)
+void Controller::setParams(IncommingMessage *msg)
 {
   for (int i = 0; i < msg->numParams; i++)
   {
@@ -298,6 +298,7 @@ void Controller::setParams(Message *msg)
     }
   }
   
+  sendAck(msg->id, AckResultParams::Success);
 }
 
 void Controller::clearCurrentAction()

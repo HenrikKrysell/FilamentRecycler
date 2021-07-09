@@ -2,8 +2,8 @@
 #define SerialCommandParser_h
 
 #include <Arduino.h>
-#include "Protocol.h"
-#include "Errors.h"
+#include "Incomming/IncommingMessage.h"
+#include "Outgoing/Errors.h"
 
 class SerialCommandParser
 {
@@ -11,7 +11,7 @@ class SerialCommandParser
     SerialCommandParser();
     ~SerialCommandParser();
 
-    Message* readIfDataPresent();
+    IncommingMessage* readIfDataPresent();
 
   private:
     const static int _bufferSize = 256;

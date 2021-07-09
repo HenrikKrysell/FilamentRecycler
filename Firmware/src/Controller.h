@@ -9,11 +9,13 @@
 #include <A4988.h>
 #include "FilamentExtruder.h"
 #include "CommunicationProtocol/SerialCommandParser.h"
-#include "CommunicationProtocol/Protocol.h"
-#include "CommunicationProtocol/Errors.h"
-#include "CommunicationProtocol/PerformAction.h"
-#include "CommunicationProtocol/SetParams.h"
-#include "CommunicationProtocol/GetParams.h"
+#include "CommunicationProtocol/Incomming/IncommingMessage.h"
+#include "CommunicationProtocol/Outgoing/OutgoingMessage.h"
+#include "CommunicationProtocol/Outgoing/Errors.h"
+#include "CommunicationProtocol/Outgoing/Ack.h"
+#include "CommunicationProtocol/Incomming/PerformAction.h"
+#include "CommunicationProtocol/Incomming/SetParams.h"
+#include "CommunicationProtocol/Incomming/GetParams.h"
 
 enum class ControllerStates {
   Idle = 0,
@@ -34,11 +36,11 @@ class Controller
     void changeState(ControllerStates newState);
 
   private:
-    void handleMessage(Message* msg);
+    void handleMessage(IncommingMessage* msg);
     void sendTelemetryData();
     void sendParameterData(char parameterId);
-    void sendParams(Message *msg);
-    void setParams(Message *msg);
+    void sendParams(IncommingMessage *msg);
+    void setParams(IncommingMessage *msg);
     void clearCurrentAction();
 
 
@@ -50,7 +52,7 @@ class Controller
     FilamentExtruder* _filamentExtruder;
     IntervalTimer _sendTelemetryTimer;
     char _telemetryDataVaribles[20];
-    Message* _currentAction;
+    IncommingMessage* _currentAction;
     // DEBUG
     IntervalTimer _intervalTimer;
 

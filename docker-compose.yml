@@ -6,7 +6,7 @@ services:
       context: .
       dockerfile: Controller.dockerfile
     ports:
-      - "5001:5001"
+      - "5002:5002"
     restart: always
     command: "python main.py"
     working_dir: /usr/src/app
@@ -27,58 +27,58 @@ services:
     command: "npm run start-production"
     working_dir: /usr/src/app
     environment:
-      - CONTROLLER_ADDR=http://controller:5001/graphql
       - PORT=3000
+      - CONTROLLER_PORT=5002
     volumes:
       - ./Software/Gateway:/usr/src/app
     networks:
       - app-network
 
-  frontend:
-    image: node:14
-    restart: always
-    command: ['yarn', 'run', 'start']
-    env_file:
-      - ./envs/development.env
-    working_dir: /usr/app/src
-    volumes:
-      - ./Software/Frontend:/usr/app/src
-    ports:
-      - '9025:9025'
-    stdin_open: true
-    networks:
-      - app-network
+  # frontend:
+  #   image: node:14
+  #   restart: always
+  #   command: ['yarn', 'run', 'start']
+  #   env_file:
+  #     - ./envs/development.env
+  #   working_dir: /usr/app/src
+  #   volumes:
+  #     - ./Software/Frontend:/usr/app/src
+  #   ports:
+  #     - '9025:9025'
+  #   stdin_open: true
+  #   networks:
+  #     - app-network
 
-  postgres:
-    image: postgres:12
-    restart: always
-    networks:
-      - app-network
-    volumes:
-    - db_data:/var/lib/postgresql/data
-    environment:
-      POSTGRES_PASSWORD: postgrespassword
-    networks:
-      - app-network
+  # postgres:
+  #   image: postgres:12
+  #   restart: always
+  #   networks:
+  #     - app-network
+  #   volumes:
+  #   - db_data:/var/lib/postgresql/data
+  #   environment:
+  #     POSTGRES_PASSWORD: postgrespassword
+  #   networks:
+  #     - app-network
   
-  hasura:
-    image: hasura/graphql-engine:v1.3.3
-    ports:
-    - "8080:8080"
-    depends_on:
-    - "postgres"
-    restart: always
-    networks:
-      - app-network
-    environment:
-      HASURA_GRAPHQL_DATABASE_URL: postgres://postgres:postgrespassword@postgres:5432/postgres
-      ## enable the console served by server
-      HASURA_GRAPHQL_ENABLE_CONSOLE: "true" # set to "false" to disable console
-      ## enable debugging mode. It is recommended to disable this in production
-      HASURA_GRAPHQL_DEV_MODE: "true"
-      HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log, websocket-log, query-log
-      ## uncomment next line to set an admin secret
-      # HASURA_GRAPHQL_ADMIN_SECRET: myadminsecretkey
+  # hasura:
+  #   image: hasura/graphql-engine:v1.3.3
+  #   ports:
+  #   - "8080:8080"
+  #   depends_on:
+  #   - "postgres"
+  #   restart: always
+  #   networks:
+  #     - app-network
+  #   environment:
+  #     HASURA_GRAPHQL_DATABASE_URL: postgres://postgres:postgrespassword@postgres:5432/postgres
+  #     ## enable the console served by server
+  #     HASURA_GRAPHQL_ENABLE_CONSOLE: "true" # set to "false" to disable console
+  #     ## enable debugging mode. It is recommended to disable this in production
+  #     HASURA_GRAPHQL_DEV_MODE: "true"
+  #     HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log, websocket-log, query-log
+  #     ## uncomment next line to set an admin secret
+  #     # HASURA_GRAPHQL_ADMIN_SECRET: myadminsecretkey
     
 networks:
   app-network:

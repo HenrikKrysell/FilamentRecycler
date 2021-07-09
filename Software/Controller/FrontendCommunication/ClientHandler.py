@@ -4,47 +4,51 @@ import signal
 import threading
 import json
 import copy
+import asyncio
 
 import os,sys
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 import constants
 
 class ClientHandler:
-  def __init__(self, eventEmitter, connection):
+  def __init__(self, eventEmitter):
     self.eventEmitter = eventEmitter
-    self.connection = connection
 
-  def init(self):
+  async def start(self, reader, writer):
     # signal.signal(signal.SIGINT, lambda *args: self.stop())
     # signal.signal(signal.SIGTERM, lambda *args: self.stop())
 
-    self.eventEmitter.on(constants.MESSAGE_FROM_MICROCONTROLLER, lambda *args: self.__sendToClient(constants.MESSAGE_FROM_MICROCONTROLLER, args))
-    self.eventEmitter.on(constants.CONTROLLER_STATE_MESSAGE, lambda *args: self.__sendToClient(constants.CONTROLLER_STATE_MESSAGE, args))
+    self.reader = reader
+    self.writer = writer
+
+    self.eventEmitter.on(constants.RECIEVED_MESSAGE_FROM_MICROCONTROLLER, lambda *args: asyncio.create_task(self.__sendToClient(constants.RECIEVED_MESSAGE_FROM_MICROCONTROLLER, args)))
+    self.eventEmitter.on(constants.CONTROLLER_STATE_MESSAGE, lambda *args: asyncio.create_task(self.__sendToClient(constants.CONTROLLER_STATE_MESSAGE, args)))
 
     self.isRunning = True
-    self.thread = threading.Thread(target=self.__recieverThread)
-    self.thread.start()    
+    await self.__recieverThread()
 
   def stop(self):
-    print("Stopping Frontend communication client...")
+    print("FrontendComServer.Client: Stopping Frontend communication client...")
     self.connection.close()
     self.isRunning = False
-    self.thread.stop()
+    #self.thread.stop()
 
-  def __sendToClient(self, topic, data):
-    print("sendToClient {msg}".format(msg = data))
+  async def __sendToClient(self, topic, data):
+    print("FrontendComServer.Client: sendToClient {msg}".format(msg = data))
     msg = {}
     msg['topic'] = topic
     msg['data'] = data
     jsonMessage = json.dumps(msg)
-    self.connection.sendall(jsonMessage.encode('utf-8'))
+    self.writer.write(jsonMessage.encode('utf-8'))
+    await self.writer.drain()
 
-  def __recieverThread(self):
-    with self.connection:
-      while self.isRunning:
-        data = self.connection.recv(1024*5)
-        if not data:
-            break
+  async def __recieverThread(self):
+    while self.isRunning:
+      data = await self.reader.read(1024*5)
+      #addr = writer.get_extra_info('peername')
 
-        message = json.loads(data.decode('utf-8'))
-        self.eventEmitter.emit(constants.FRONTEND_BASE_MESSAGE+message['topic'], message)
+      if not data:
+          break
+
+      message = json.loads(data.decode('utf-8'))
+      self.eventEmitter.emit(constants.FRONTEND_BASE_MESSAGE+message['topic'], message)

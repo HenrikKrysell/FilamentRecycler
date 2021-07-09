@@ -3,8 +3,8 @@
 
 #include <Arduino.h>
 #include "DataStructures/motorDefinition.h"
-#include "CommunicationProtocol/Protocol.h"
-#include "CommunicationProtocol/PerformAction.h"
+#include "CommunicationProtocol/Incomming/IncommingMessage.h"
+#include "CommunicationProtocol/Incomming/PerformAction.h"
 #include "Drivers/StepperMotor.h"
 #include "Utilities/IntervalTimer.h"
 #include "Utilities/LoopState.h"
@@ -28,7 +28,7 @@ class FilamentExtruder
     void setup();
     void stop();
 
-    void startAction(Message* msg);
+    void startAction(IncommingMessage* msg);
     LoopStates loop();
 
     inline float getPullerRPM() __attribute__((always_inline)) {

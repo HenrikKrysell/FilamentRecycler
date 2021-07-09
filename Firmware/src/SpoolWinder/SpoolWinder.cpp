@@ -44,7 +44,7 @@ void SpoolWinder::setup()
   setSpoolWinderGearRatio(16);
 }
 
-void SpoolWinder::startAction(Message* msg)
+void SpoolWinder::startAction(IncommingMessage* msg)
 {
   switch (msg->subType)
   {
@@ -128,20 +128,6 @@ LoopStates SpoolWinder::loop()
     if (stepDiff >= _spoolWinderNumStepsPerRevolution) {
       _lastStepCountGuideMoved = _spoolWinderStepper->getPosition();
 
-      Serial.println("Inside!");
-      // long guidePos = _filamentGuideStepper->getPosition();
-      // if (abs(guidePos - _filamentGuideStopPos) < _filamentGuideStepsPerSpoolRevolution) {
-      //   // We have reached the end, turn around
-      //   // But we want to stay for one more revolution to start the next layer at the same spot.
-      //   // Adding one here will make it go from -1 to 0 and then next revolution from 0 to 1 and start moving again.
-      //   _filamentGuideDirection++;
-      // }
-      // if (abs(guidePos - _filamentGuideStartPos) < _filamentGuideStepsPerSpoolRevolution) {
-      //   // We are at the start, turn around
-      //   // But we want to stay for one more revolution to start the next layer at the same spot.
-      //   // Adding one here will make it go from -1 to 0 and then next revolution from 0 to 1 and start moving again.
-      //   _filamentGuideDirection--;
-      // }
       _numRevolutionsThisLayer++;
       if (_numRevolutionsThisLayer >= _numRevolutionsPerLayer) {
         _numLayers++;
@@ -151,9 +137,6 @@ LoopStates SpoolWinder::loop()
         _filamentGuideDirection *= -1;
       }
       else {
-        Serial.print("setRelativeTargetPosition: ");
-        Serial.println(_filamentGuideDirection);
-        Serial.println(_filamentGuideStepsPerSpoolRevolution);
         _filamentGuideStepper->setRelativeTargetPosition(_filamentGuideDirection * _filamentGuideStepsPerSpoolRevolution);
       }
     }
@@ -221,7 +204,7 @@ void SpoolWinder::stop() {
   
 }
 
-void SpoolWinder::getAxesValuesFromMessage(Message* msg, long &spoolWinderPosition, long &filamentGuidePosition)
+void SpoolWinder::getAxesValuesFromMessage(IncommingMessage* msg, long &spoolWinderPosition, long &filamentGuidePosition)
 {
     for (int i = 0; i < msg->numParams; i++)
     {

@@ -26,7 +26,7 @@ async function startApolloServer() {
 var net = require('net');
 
 var client = new net.Socket();
-client.connect(5001, 'controller', function() {
+client.connect(process.env.CONTROLLER_PORT, 'controller', function() {
 	console.log('Connected');
   const obj = {
     topic: 'test',

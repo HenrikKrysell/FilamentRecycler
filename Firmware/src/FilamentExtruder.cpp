@@ -34,7 +34,7 @@ LoopStates FilamentExtruder::loop()
   return LoopStates::Done;
 }
 
-void FilamentExtruder::startAction(Message* msg)
+void FilamentExtruder::startAction(IncommingMessage* msg)
 {
   switch (msg->subType)
   {

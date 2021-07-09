@@ -10,8 +10,8 @@
 #include "Potentiometer.h"
 #include "../Utilities/IntervalTimer.h"
 #include "../Utilities/LoopState.h"
-#include "../CommunicationProtocol/Protocol.h"
-#include "../CommunicationProtocol/PerformAction.h"
+#include "../CommunicationProtocol/Incomming/IncommingMessage.h"
+#include "../CommunicationProtocol/Incomming/PerformAction.h"
 
 enum class SpoolWinderStates {
   Idle = 0,
@@ -33,7 +33,7 @@ class SpoolWinder
     void setup();
     void stop();
 
-    void startAction(Message* msg);
+    void startAction(IncommingMessage* msg);
     LoopStates loop();
 
     inline SpoolWinderStates getState() __attribute__((always_inline)) {
@@ -117,7 +117,7 @@ class SpoolWinder
 
 
     void changeState(SpoolWinderStates newState);
-    void getAxesValuesFromMessage(Message* msg, long &spoolWinderPosition, long &filamentGuidePosition);
+    void getAxesValuesFromMessage(IncommingMessage* msg, long &spoolWinderPosition, long &filamentGuidePosition);
 
     MotorDefinition _spoolWinderMotorDef;
     MotorDefinition _filamentGuideMotorDef;

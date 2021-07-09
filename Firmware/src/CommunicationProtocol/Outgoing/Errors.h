@@ -1,17 +1,27 @@
 #ifndef Errors_h
 #define Errors_h
 
-#include "Protocol.h"
+#include "OutgoingMessage.h"
+
+enum class ErrorParams {
+    ErrorCode = 'C',
+    IntParam = 'N',
+};
 
 inline void SerialSendError(int errorCode) {
-    Serial.print((char)MessageType::Error);
+    Serial.print((char)OutgoingMessageType::Error);
+    Serial.print(" ");
+    Serial.print((char)ErrorParams::ErrorCode);
     Serial.println(errorCode);
 }
 
 inline void SerialSendError(int errorCode, int arg1) {
-    Serial.print((char)MessageType::Error);
+    Serial.print((char)OutgoingMessageType::Error);
+    Serial.print(" ");
+    Serial.print((char)ErrorParams::ErrorCode);
     Serial.print(errorCode);
     Serial.print(" ");
+    Serial.println((char)ErrorParams::IntParam);
     Serial.println(arg1);
 }
 
