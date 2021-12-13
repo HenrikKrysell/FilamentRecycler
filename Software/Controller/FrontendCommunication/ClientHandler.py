@@ -51,4 +51,5 @@ class ClientHandler:
           break
 
       message = json.loads(data.decode('utf-8'))
+      print("incomming message: {msg}".format(msg = message))
       self.eventEmitter.emit(constants.FRONTEND_BASE_MESSAGE+message['topic'], message)

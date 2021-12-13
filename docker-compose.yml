@@ -1,88 +1,87 @@
-version: '3.6'
+version: "3.6"
 
 services:
-  controller:
-    build:
-      context: .
-      dockerfile: Controller.dockerfile
-    ports:
-      - "5002:5002"
-    restart: always
-    command: "python main.py"
-    working_dir: /usr/src/app
-    volumes:
-      - ./Software/Controller:/usr/src/app
-    networks:
-      - app-network
-    devices:
-      - "/dev/ttyUSB0:/dev/ttyUSB0"
-      
+  # controller:
+  #   build:
+  #     context: .
+  #     dockerfile: Controller.dockerfile
+  #   ports:
+  #     - "5002:5002"
+  #   restart: always
+  #   command: "python main.py"
+  #   working_dir: /usr/src/app
+  #   volumes:
+  #     - ./Software/Controller:/usr/src/app
+  #   networks:
+  #     - app-network
+  #   devices:
+  #     - "/dev/ttyUSB0:/dev/ttyUSB0"
+
   gateway:
-    build:
-      context: .
-      dockerfile: Gateway.dockerfile
+    image: node:14-alpine
     ports:
       - "3000:3000"
     restart: always
-    command: "npm run start-production"
+    command: ["yarn", "workspace", "filament-recycler-gateway", "run", "dev"]
     working_dir: /usr/src/app
     environment:
       - PORT=3000
       - CONTROLLER_PORT=5002
     volumes:
-      - ./Software/Gateway:/usr/src/app
+      - .:/usr/src/app
     networks:
       - app-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
-  # frontend:
-  #   image: node:14
-  #   restart: always
-  #   command: ['yarn', 'run', 'start']
-  #   env_file:
-  #     - ./envs/development.env
-  #   working_dir: /usr/app/src
-  #   volumes:
-  #     - ./Software/Frontend:/usr/app/src
-  #   ports:
-  #     - '9025:9025'
-  #   stdin_open: true
-  #   networks:
-  #     - app-network
-
-  # postgres:
-  #   image: postgres:12
-  #   restart: always
-  #   networks:
-  #     - app-network
-  #   volumes:
-  #   - db_data:/var/lib/postgresql/data
-  #   environment:
-  #     POSTGRES_PASSWORD: postgrespassword
-  #   networks:
-  #     - app-network
-  
-  # hasura:
-  #   image: hasura/graphql-engine:v1.3.3
-  #   ports:
-  #   - "8080:8080"
-  #   depends_on:
-  #   - "postgres"
-  #   restart: always
-  #   networks:
-  #     - app-network
-  #   environment:
-  #     HASURA_GRAPHQL_DATABASE_URL: postgres://postgres:postgrespassword@postgres:5432/postgres
-  #     ## enable the console served by server
-  #     HASURA_GRAPHQL_ENABLE_CONSOLE: "true" # set to "false" to disable console
-  #     ## enable debugging mode. It is recommended to disable this in production
-  #     HASURA_GRAPHQL_DEV_MODE: "true"
-  #     HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log, websocket-log, query-log
-  #     ## uncomment next line to set an admin secret
-  #     # HASURA_GRAPHQL_ADMIN_SECRET: myadminsecretkey
-    
+  frontend:
+    image: node:14-alpine
+    restart: always
+    command: ["yarn", "workspace", "filament-recycler-frontend", "run", "start"]
+    env_file:
+      - ./envs/development.env
+    working_dir: /usr/app/src
+    volumes:
+      - .:/usr/app/src
+    ports:
+      - "9025:3000"
+    stdin_open: true
+    networks:
+      - app-network
 networks:
   app-network:
     driver: bridge
 
+# postgres:
+#   image: postgres:12
+#   restart: always
+#   networks:
+#     - app-network
+#   volumes:
+#   - db_data:/var/lib/postgresql/data
+#   environment:
+#     POSTGRES_PASSWORD: postgrespassword
+#   networks:
+#     - app-network
+
+# hasura:
+#   image: hasura/graphql-engine:v1.3.3
+#   ports:
+#   - "8080:8080"
+#   depends_on:
+#   - "postgres"
+#   restart: always
+#   networks:
+#     - app-network
+#   environment:
+#     HASURA_GRAPHQL_DATABASE_URL: postgres://postgres:postgrespassword@postgres:5432/postgres
+#     ## enable the console served by server
+#     HASURA_GRAPHQL_ENABLE_CONSOLE: "true" # set to "false" to disable console
+#     ## enable debugging mode. It is recommended to disable this in production
+#     HASURA_GRAPHQL_DEV_MODE: "true"
+#     HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log, websocket-log, query-log
+#     ## uncomment next line to set an admin secret
+#     # HASURA_GRAPHQL_ADMIN_SECRET: myadminsecretkey
+
 volumes:
-  db_data:      
+  db_data:

@@ -1,0 +1,15 @@
+{
+  "name": "filament-recycler",
+  "private": true,
+  "workspaces": [
+    "Software/*"
+  ],
+  "dependencies": {
+    "husky": "4"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix"
+    ]
+  }
+}

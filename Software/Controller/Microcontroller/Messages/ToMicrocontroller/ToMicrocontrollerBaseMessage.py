@@ -17,14 +17,14 @@ class ToMicrocontrollerBaseMessage:
         if self._ackSemaphore is not None and self._MessageId == msg.MessageId:
             self._ackSemaphore.release()
 
-    async def sendToController(self, ):
+    async def sendToController(self):
         async with ToMicrocontrollerBaseMessage._static_lastIdLock:
             self._MessageId = ToMicrocontrollerBaseMessage._static_lastId
             ToMicrocontrollerBaseMessage._static_lastId = ToMicrocontrollerBaseMessage._static_lastId + 1
 
         self.eventEmitter.emit(MESSAGE_TO_MICROCONTROLLER, self._generateControllerMessage())
 
-    async def sendToControllerAndWaitForResponse(self, ):
+    async def sendToControllerAndWaitForResponse(self):
         async with ToMicrocontrollerBaseMessage._static_lastIdLock:
             self._MessageId = ToMicrocontrollerBaseMessage._static_lastId
             ToMicrocontrollerBaseMessage._static_lastId = ToMicrocontrollerBaseMessage._static_lastId + 1

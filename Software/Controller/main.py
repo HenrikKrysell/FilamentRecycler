@@ -10,6 +10,7 @@ from time import sleep
 import constants
 from Microcontroller.Messages.FromMicrocontroller.FromMicrocontrollerMessageFactory import FromMicrocontrollerMessageFactory
 import asyncio
+#import Microcontroller.Messages.ToMicrocontroller.RawStringMessage import RawStringMessage
 
 # Gracefully close the app when docker closes
 def handle_sigterm(*args):
@@ -32,9 +33,13 @@ async def main():
     frontendComServer = FrontendComServer(eventEmitter)
     frontendComServerTask =  asyncio.create_task(frontendComServer.start(5002))
 
-    await asyncio.sleep(3)
-    eventEmitter.emit(constants.SEND_MESSAGE_TO_MICROCONTROLLER, "T C P\n")
-    eventEmitter.emit(constants.SEND_MESSAGE_TO_MICROCONTROLLER, "S E500\n")
+    # await asyncio.sleep(3)
+    # setTelemetryMessage = RawStringMessage("T C P\n")
+    # setTelmetryFrequencyMessage = RawStringMessage("S E500\n")
+    # await setTelemetryMessage.sendToControllerAndWaitForResponse()
+    # await setTelmetryFrequencyMessage.sendToControllerAndWaitForResponse()
+    # #eventEmitter.emit(constants.SEND_MESSAGE_TO_MICROCONTROLLER, "T C P\n")
+    # #eventEmitter.emit(constants.SEND_MESSAGE_TO_MICROCONTROLLER, "S E500\n")
 
     await asyncio.wait([
         serialConnectionTask,
@@ -45,4 +50,3 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     loop.run_until_complete(main())
     loop.close()
-    #asyncio.run(main())

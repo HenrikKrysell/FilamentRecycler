@@ -5,6 +5,7 @@ from .AckMessage import AckMessage
 from .GetParamMessage import GetParamMessage
 from .TelemetricMessage import TelemetricMessage
 from .FromMicrocontrollerBaseMessage import FromMicrocontrollerBaseMessage
+from .DebugMessage import DebugMessage
 import re
 
 regex = '([A-Z]\d*)'
@@ -12,6 +13,8 @@ regexComp = re.compile(regex)
 
 def FromMicrocontrollerMessageFactory(rawMessage) -> FromMicrocontrollerBaseMessage:
     matches = regexComp.findall(rawMessage)
+    if (len(matches) == 0):
+        return DebugMessage(rawMessage)
     if (matches[0] == 'T'):
         return TelemetricMessage(matches[1:])
     if (matches[0] == 'G'):
