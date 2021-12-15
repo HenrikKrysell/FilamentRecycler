@@ -17,6 +17,11 @@ def handle_sigterm(*args):
     raise KeyboardInterrupt()
 signal.signal(signal.SIGTERM, handle_sigterm)
 
+def stop(controller: Controller, serialConnection: SerialConnection, frontend: FrontendComServer):
+    controller.stop()
+    serialConnection.stop()
+    frontend.stop()
+
 async def main():
     # DEBUG
     match = FromMicrocontrollerMessageFactory('T C1 S1 P456 X24 T200')
@@ -32,6 +37,9 @@ async def main():
 
     frontendComServer = FrontendComServer(eventEmitter)
     frontendComServerTask =  asyncio.create_task(frontendComServer.start(5002))
+
+    signal.signal(signal.SIGINT, lambda *args: stop(controller, serialConnection, frontendComServer))
+    signal.signal(signal.SIGTERM, lambda *args: stop(controller, serialConnection, frontendComServer))
 
     # await asyncio.sleep(3)
     # setTelemetryMessage = RawStringMessage("T C P\n")

@@ -57,8 +57,6 @@ class SerialConnection():
 
   async def start(self):
     print("SerialConnection: Starting Microcontroller communication...")
-    signal.signal(signal.SIGINT, lambda *args: self.stop())
-    signal.signal(signal.SIGTERM, lambda *args: self.stop())
     comports = self.getAllComports()
     print(f"SerialConnection: Available COM ports: {comports!r}")
     

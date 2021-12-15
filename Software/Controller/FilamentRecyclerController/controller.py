@@ -33,8 +33,6 @@ class Controller:
 
   async def start(self):
     print("Controller: Starting...")
-    signal.signal(signal.SIGINT, lambda *args: self.stop())
-    signal.signal(signal.SIGTERM, lambda *args: self.stop())
 
     self.isRunning = True
     await self.__run()
