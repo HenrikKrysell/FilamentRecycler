@@ -8,7 +8,6 @@ from pymitter import EventEmitter
 from Microcontroller.SerialConnection import SerialConnection
 from time import sleep
 import constants
-from Microcontroller.Messages.FromMicrocontroller.FromMicrocontrollerMessageFactory import FromMicrocontrollerMessageFactory
 import asyncio
 #import Microcontroller.Messages.ToMicrocontroller.RawStringMessage import RawStringMessage
 
@@ -23,10 +22,6 @@ def stop(controller: Controller, serialConnection: SerialConnection, frontend: F
     frontend.stop()
 
 async def main():
-    # DEBUG
-    match = FromMicrocontrollerMessageFactory('T C1 S1 P456 X24 T200')
-    print(match.toJson())
-
     eventEmitter = EventEmitter()
 
     controller = Controller(eventEmitter)

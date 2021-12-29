@@ -21,10 +21,10 @@ class ClientHandler:
     # signal.signal(signal.SIGINT, lambda *args: self.stop())
     # signal.signal(signal.SIGTERM, lambda *args: self.stop())
 
-    print("FrontendComServer.Client: Connected");
+    print("FrontendComServer.Client: Connected")
     self.reader = reader
     self.writer = writer
-    self.eventEmitter.on(constants.RECIEVED_MESSAGE_FROM_MICROCONTROLLER, self.onRecievedMessageFromMicrocontroller)
+    #self.eventEmitter.on(constants.RECIEVED_MESSAGE_FROM_MICROCONTROLLER, self.onRecievedMessageFromMicrocontroller)
     self.eventEmitter.on(constants.CONTROLLER_STATE_MESSAGE, self.onControllerStateMessage)
 
     self.isRunning = True

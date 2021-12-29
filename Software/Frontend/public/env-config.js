@@ -5,7 +5,7 @@
     "SHLVL": "6",
     "HOME": "/root",
     "YARN_WRAP_OUTPUT": "false",
-    "PATH": "/tmp/yarn--1639595547293-0.504416017586157:/usr/app/src/Software/Frontend/node_modules/.bin:/usr/local/share/.config/yarn/link/node_modules/.bin:/usr/app/src/node_modules/.bin:/usr/local/libexec/lib/node_modules/npm/bin/node-gyp-bin:/usr/local/lib/node_modules/npm/bin/node-gyp-bin:/usr/local/bin/node_modules/npm/bin/node-gyp-bin:/tmp/yarn--1639595547080-0.37378344882388315:/usr/app/src/Software/Frontend/node_modules/.bin:/usr/local/share/.config/yarn/link/node_modules/.bin:/usr/app/src/node_modules/.bin:/usr/local/libexec/lib/node_modules/npm/bin/node-gyp-bin:/usr/local/lib/node_modules/npm/bin/node-gyp-bin:/usr/local/bin/node_modules/npm/bin/node-gyp-bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+    "PATH": "/tmp/yarn--1640768223739-0.1259476962537549:/usr/app/src/Software/Frontend/node_modules/.bin:/usr/local/share/.config/yarn/link/node_modules/.bin:/usr/app/src/node_modules/.bin:/usr/local/libexec/lib/node_modules/npm/bin/node-gyp-bin:/usr/local/lib/node_modules/npm/bin/node-gyp-bin:/usr/local/bin/node_modules/npm/bin/node-gyp-bin:/tmp/yarn--1640768223525-0.7665669657857865:/usr/app/src/Software/Frontend/node_modules/.bin:/usr/local/share/.config/yarn/link/node_modules/.bin:/usr/app/src/node_modules/.bin:/usr/local/libexec/lib/node_modules/npm/bin/node-gyp-bin:/usr/local/lib/node_modules/npm/bin/node-gyp-bin:/usr/local/bin/node_modules/npm/bin/node-gyp-bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
     "NODE": "/usr/local/bin/node",
     "PROXY_PATH": ":9025/",
     "PWD": "/usr/app/src/Software/Frontend",

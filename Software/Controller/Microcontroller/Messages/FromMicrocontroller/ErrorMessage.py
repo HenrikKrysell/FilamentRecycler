@@ -1,24 +1,22 @@
-from .FromMicrocontrollerBaseMessage import FromMicrocontrollerBaseMessage
-from enum import Enum
+from enum import IntEnum
 # import sys, os, inspect
 # currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 # parentdir = os.path.dirname(currentdir)
 # sys.path.insert(0, parentdir)
 
-class ErrorMessage(FromMicrocontrollerBaseMessage):
-    def __init__(self, params):
-        paramToPropertyList = {
-            'C': '__ErrorCode',
-            'N': '__IntParam',
-        }
+class ERROR_CODE(IntEnum):
+    INVALID_INITIALIZE_MESSAGE = 1,
 
-        super().__init__(paramToPropertyList, params)
-
+class ErrorMessage:    
+    def __init__(self, errorCode: ERROR_CODE):
+        self.errorCode = errorCode
 
     @property
-    def IntParam(self) -> int:
-        return self._getParam(self.paramToPropertyList['N'])
+    def ErrorCode(self) -> ERROR_CODE:
+        return self.errorCode
+    
+    def __str__(self):
+        if self.errorCode == ERROR_CODE.INVALID_INITIALIZE_MESSAGE:
+            return 'Microcontroller::ERROR::INVALID_INITIALIZE_MESSAGE'
 
-    @property
-    def ErrorCode(self):
-        return self._getParam(self.paramToPropertyList['C'])
+        return 'Microcontroller::ERROR::{code}'.format(code = self.errorCode)

@@ -1,15 +1,10 @@
-from .FromMicrocontrollerBaseMessage import FromMicrocontrollerBaseMessage
-from enum import Enum
-
-class DebugMessage(FromMicrocontrollerBaseMessage):
-    def __init__(self, message):
-        paramToPropertyList = {
-        }
-
-        super().__init__(paramToPropertyList, "")
+class DebugMessage:    
+    def __init__(self, message: str):
         self._message = message
 
-
     @property
-    def Message(self) -> str:
+    def message(self) -> str:
         return self._message
+    
+    def __str__(self):
+        return 'Microcontroller::DEBUG::{m}'.format(m = self.message)

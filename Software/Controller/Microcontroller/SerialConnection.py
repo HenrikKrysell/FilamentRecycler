@@ -1,49 +1,67 @@
-#import threading
+import threading
 import serial
 import serial.tools.list_ports
+from Microcontroller.Messages.ToMicrocontroller.ToMicrocontrollerBaseMessage import ToMicrocontrollerBaseMessage
 import constants
 import signal
 import sys
 import asyncio
 import serial_asyncio
-# from .Messages.FromMicrocontroller.TelemetricMessage import TelemetricMessage
-# from .Messages.FromMicrocontroller.FromMicrocontrollerMessageFactory import FromMicrocontrollerMessageFactory
+from bitstring import BitArray
+from .Messages.FromMicrocontroller.MessageParser import parseMessage
 
 class SerialConnection():
 
   class Connection(asyncio.Protocol):
     def __init__(self, eventEmitter):
       self.eventEmitter = eventEmitter
-      self.buffer = ""
+      self.buffer = BitArray()
 
-      self.eventEmitter.on(constants.SEND_MESSAGE_TO_MICROCONTROLLER, lambda *args: self.__sendMessage(args))
+      self.eventEmitter.on(constants.SEND_MESSAGE_TO_MICROCONTROLLER, lambda *args: self.__sendMessage(args[0]))
 
     def connection_made(self, transport):
         self.transport = transport
         print('SerialConnection: Connected to: ', transport)
         transport.serial.rts = False
 
-    def data_received(self, data):
+    def consumeMessageBufferAndParseMessage(self):
+        invalidMessageType = True
+        parsedMessage = None
+        insufficentBytes = False
+        msgLength = 0
+        while invalidMessageType and not insufficentBytes and self.buffer.length > 0:
+          parsedMessage, msgLength, invalidMessageType, insufficentBytes = parseMessage(self.buffer)
+          if invalidMessageType:
+            del self.buffer[:8]
+
+        if parsedMessage:
+          del self.buffer[:msgLength]
+        
+        return parsedMessage
+
+    def data_received(self, data: bytes):
       try:
-        combinedData = self.buffer + data.decode('utf-8')
-        lines = combinedData.split('\n')
-        # save the last line as the buffer
-        self.buffer = lines[-1]
-        completeLines = lines[:-1]
-        if (len(completeLines) >= 1):
-          for line in completeLines:
-            print("SerialConnection: Firmware: {msg}".format(msg = line))
-            self.eventEmitter.emit(constants.RECIEVED_MESSAGE_FROM_MICROCONTROLLER, line)
-      except:
-        e = sys.exc_info()[0]
-        print("SerialConnection: <p>Error: %s</p>" % e)
+        #print('New data: {d}'.format(d =data))
+        self.buffer.append(data)
+
+        while True:
+          parsedMessage = self.consumeMessageBufferAndParseMessage()
+
+          if parsedMessage:
+              print("SerialConnection::{msg}".format(msg = parsedMessage))
+              self.eventEmitter.emit(constants.RECIEVED_MESSAGE_FROM_MICROCONTROLLER, parsedMessage)
+          else:
+            break
+      except Exception as error:
+        #e = sys.exc_info()[0]
+        print("SerialConnection: Error: %s" % error)
 
     def connection_lost(self, exc):
         print('SerialConnection: Connection closed')
         asyncio.get_event_loop().stop()
 
-    def __sendMessage(self, data):
-      self.transport.write(data[0].encode('utf-8'))
+    def __sendMessage(self, msg: ToMicrocontrollerBaseMessage):
+      self.transport.write(msg.generateControllerMessage())
 
   def __init__(self, eventEmitter):
     self.eventEmitter = eventEmitter
@@ -71,5 +89,5 @@ class SerialConnection():
       asyncio.get_event_loop(), 
       lambda *args: SerialConnection.Connection(self.eventEmitter),
       comport, 
-      baudrate=115200
+      baudrate=250000
     )
