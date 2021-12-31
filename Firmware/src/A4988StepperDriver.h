@@ -22,6 +22,22 @@ class A4988StepperDriver
         pinMode(_enablePin, OUTPUT);
     }
 
+    void setRotation(MotorRotationDirection dir) {
+        switch (dir)
+        {
+        case MotorRotationDirection::CLOCKWISE:
+            setClockwiseRotation();
+            break;
+        case MotorRotationDirection::COUNTER_CLOCKWISE:
+            setCounterClockwiseRotation();
+            break;
+        case MotorRotationDirection::STOP:
+        default:
+            stop();
+            break;
+        }
+    }
+
     void setClockwiseRotation() {
         this->_rotationDir = MotorRotationDirection::CLOCKWISE;
         digitalWrite(_dirPin, LOW);

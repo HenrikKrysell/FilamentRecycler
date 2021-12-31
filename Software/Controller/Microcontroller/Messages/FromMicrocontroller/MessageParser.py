@@ -35,7 +35,7 @@ def parseMessage(buffer: BitArray) -> ParseMessageResult:
     elif messageType == INCOMMING_MESSAGE_TYPES.INITIALIZE_DONE:
         return ParseMessageResult(InitializationCompleteMessage(), 8, False, False)
     elif messageType == INCOMMING_MESSAGE_TYPES.TELEMETRIC_DATA:
-        numBits = 6*8#8*8
+        numBits = 8*8#8*8
         if (buffer.length < numBits):
             return ParseMessageResult(None, 0, False, True)
 
@@ -48,8 +48,9 @@ def parseMessage(buffer: BitArray) -> ParseMessageResult:
         pos += 16
         filamentDiameter = buffer[pos: pos + 16].intle
         return ParseMessageResult(TelemetricDataMessage(temperature, rpmCount, armPosition, filamentDiameter), numBits, False, False)
+        #return ParseMessageResult(TelemetricDataMessage(temperature, rpmCount, armPosition, 1), numBits, False, False)
     elif messageType == ord("'"):
-        pos = buffer.find(hex(ord("'")), start=8)
+        pos = buffer.find(hex(ord("'")), start=8, bytealigned=True)
         if pos:
             return ParseMessageResult(DebugMessage(buffer[8:pos[0]].bytes.decode('utf-8')), pos[0] + 8, False, False)
         

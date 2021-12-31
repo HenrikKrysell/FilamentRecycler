@@ -34,6 +34,22 @@ class OlimexMotorDriver
         #endif
     }
 
+    void setRotation(MotorRotationDirection dir) {
+        switch (dir)
+        {
+        case MotorRotationDirection::CLOCKWISE:
+            setClockwiseRotation();
+            break;
+        case MotorRotationDirection::COUNTER_CLOCKWISE:
+            setCounterClockwiseRotation();
+            break;
+        case MotorRotationDirection::STOP:
+        default:
+            stop();
+            break;
+        }
+    }
+    
     void stop() {
         _rotationDir = MotorRotationDirection::STOP;
         digitalWrite(_inaPin, LOW);

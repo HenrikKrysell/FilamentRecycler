@@ -10,22 +10,34 @@ class InitializeMessage(ToMicrocontrollerBaseMessage):
         self._motorPWMPin = 0
         self._motorDir = 0
         self._motorRPMCounterPin = 0
+
         self._pullerStepperEnablePin = 0
         self._pullerStepperStepPin = 0
         self._pullerStepperDirPin = 0
         self._pullerStepperDirValue = 0
+
         self._winderStepperEnablePin = 0
         self._winderStepperStepPin = 0
         self._winderStepperDirPin = 0
         self._winderStepperDirValue = 0
+
         self._filamentGuideStepperEnablePin = 0
         self._filamentGuideStepperStepPin = 0
         self._filamentGuideStepperDirPin = 0
         self._filamentGuideStepperDirValue = 0
+
         self._thermistorAnalogPin = 0
         self._heaterPin = 0
         self._winderArmAnalogPin = 0
+        self._filamentDiameterAnalogPin = 0
         self._filamentGuideEndstopPin = 0
+
+        self._telemetricDataIntervalMs = 0
+        self._thermistorPollIntervalMs = 0
+        self._winderArmPollIntervalMs = 0
+        self._filamentDiameterPollIntervalMs = 0
+        self._motorRPMCounterPollIntervalMs = 0
+
 
     @property
     def motorINAPin(self):
@@ -50,6 +62,14 @@ class InitializeMessage(ToMicrocontrollerBaseMessage):
     @motorPWMPin.setter
     def motorPWMPin(self, value: int):
         self._motorPWMPin = value
+
+    @property
+    def motorDir(self):
+        return self._motorDir
+
+    @motorDir.setter
+    def motorDir(self, value: int):
+        self._motorDir = value
 
     @property
     def motorRPMCounterPin(self):
@@ -179,25 +199,98 @@ class InitializeMessage(ToMicrocontrollerBaseMessage):
     def winderArmAnalogPin(self, value: int):
         self._winderArmAnalogPin = value
 
+    @property
+    def filamentDiameterAnalogPin(self):
+        return self._filamentDiameterAnalogPin
+
+    @filamentDiameterAnalogPin.setter
+    def filamentDiameterAnalogPin(self, value: int):
+        self._filamentDiameterAnalogPin = value
+
+    @property
+    def filamentGuideEndstopPin(self):
+        return self._filamentGuideEndstopPin
+
+    @filamentGuideEndstopPin.setter
+    def filamentGuideEndstopPin(self, value: int):
+        self._filamentGuideEndstopPin = value
+
+    @property
+    def telemetricDataIntervalMs(self):
+        return self._telemetricDataIntervalMs
+
+    @telemetricDataIntervalMs.setter
+    def telemetricDataIntervalMs(self, value: int):
+        self._telemetricDataIntervalMs = value
+
+    @property
+    def thermistorPollIntervalMs(self):
+        return self._thermistorPollIntervalMs
+
+    @thermistorPollIntervalMs.setter
+    def thermistorPollIntervalMs(self, value: int):
+        self._thermistorPollIntervalMs = value
+
+    @property
+    def winderArmPollIntervalMs(self):
+        return self._winderArmPollIntervalMs
+
+    @winderArmPollIntervalMs.setter
+    def winderArmPollIntervalMs(self, value: int):
+        self._winderArmPollIntervalMs = value
+
+    @property
+    def filamentDiameterPollIntervalMs(self):
+        return self._filamentDiameterPollIntervalMs
+
+    @filamentDiameterPollIntervalMs.setter
+    def filamentDiameterPollIntervalMs(self, value: int):
+        self._filamentDiameterPollIntervalMs = value
+
+    @property
+    def motorRPMCounterPollIntervalMs(self):
+        return self._motorRPMCounterPollIntervalMs
+
+    @motorRPMCounterPollIntervalMs.setter
+    def motorRPMCounterPollIntervalMs(self, value: int):
+        self._motorRPMCounterPollIntervalMs = value
+
     def generateControllerMessage(self) -> bytes:
         bits = bitstring.pack(\
-            '>BBBBBBBBBBBBBBBB',\
+            '<BBBBBBBBBBBBBBBBBBBBBBBhhhhh',\
             8,\
             self.motorINAPin,\
             self.motorINBPin,\
             self.motorPWMPin,\
+            self.motorDir,\
             self.motorRPMCounterPin,\
+
             self.pullerStepperEnablePin, \
             self.pullerStepperStepPin, \
             self.pullerStepperDirPin, \
             self.pullerStepperDirValue, \
+                
             self.winderStepperEnablePin, \
             self.winderStepperStepPin, \
             self.winderStepperDirPin, \
             self.winderStepperDirValue, \
+
+            self.filamentGuideStepperEnablePin, \
+            self.filamentGuideStepperStepPin, \
+            self.filamentGuideStepperDirPin, \
+            self.filamentGuideStepperDirValue, \
+
             self.thermistorAnalogPin, \
             self.heaterPin, \
-            self.winderArmAnalogPin)
+            self.winderArmAnalogPin,\
+            self.filamentDiameterAnalogPin,\
+            self.filamentGuideEndstopPin,\
+
+            self.telemetricDataIntervalMs, \
+            self.thermistorPollIntervalMs,\
+            self.winderArmPollIntervalMs,\
+            self.filamentDiameterPollIntervalMs,\
+            self.motorRPMCounterPollIntervalMs)
 
         return bits.tobytes()
 

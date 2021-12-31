@@ -21,6 +21,9 @@ class TelemetricDataMessage:
     def filamentDiameter(self):
         return self._filamentDiameter
 
+    def __repr__ (self):
+        return str(self)
+        
     def __str__(self):
         return 'Microcontroller::TelemetricData:: temp: {t}, rpmCount: {r}, armPosition: {a}, filamentDiameter: {f}'\
             .format(t = self.temperature, r = self.rpmCount, a = self.armPosition, f = self.filamentDiameter)

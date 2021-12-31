@@ -2,3 +2,4 @@ pymitter>=0.3
 pyserial>=3.5
 pyserial-asyncio>=0.5
 bitstring>=3.1.9
+simple-pid>=1.0.1

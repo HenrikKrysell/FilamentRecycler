@@ -13,6 +13,7 @@ import { EventEmitter } from 'events';
 import {
     ControllerMessageType,
     IControllerSetRPMMessage,
+    IControllerState,
     IControllerStateMessage,
 } from '../../Controller';
 
@@ -29,12 +30,12 @@ class CurrentSessionClient extends AbstractStreamingClient implements IStreamCli
         this.controllerEventEmitter = controllerEventEmitter;
         this.controllerEventEmitter.on(
             ControllerMessageType.STATE_UPDATED,
-            (msg: IControllerStateMessage) => {
+            (msg: IControllerState) => {
                 this.send({
                     type: MESSAGE_TYPE.STATE_UPDATED,
                     data: {
-                        currentRPM: msg.stateUpdate.currentRPM,
-                        targetRPM: msg.stateUpdate.targetRPM,
+                        currentRPM: msg.currentRPM,
+                        targetRPM: msg.targetRPM,
                     },
                 });
             }
@@ -53,7 +54,6 @@ class CurrentSessionClient extends AbstractStreamingClient implements IStreamCli
     }
 
     handleSetTargetRPM(message: ISetRPMMessage): void {
-        console.log('SetRPM');
         const event: IControllerSetRPMMessage = { targetRPM: message.targetRPM };
         this.controllerEventEmitter.emit(ControllerMessageType.SET_RPM, event);
 

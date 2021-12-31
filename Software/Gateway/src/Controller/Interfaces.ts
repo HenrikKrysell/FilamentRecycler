@@ -7,6 +7,11 @@ export enum ControllerMessageType {
     CONNECTION_ERROR = 'connection_error',
 }
 
+export interface IControllerMessage<T> {
+    topic: string;
+    data: T;
+}
+
 export interface IControllerState {
     currentRPM: number;
     targetRPM: number;

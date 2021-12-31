@@ -14,8 +14,9 @@ import constants
 class ClientHandler:
   def __init__(self, eventEmitter: EventEmitter):
     self.eventEmitter = eventEmitter
-    self.onRecievedMessageFromMicrocontroller = lambda *args: asyncio.create_task(self.__sendToClient(constants.RECIEVED_MESSAGE_FROM_MICROCONTROLLER, args))
-    self.onControllerStateMessage = lambda *args: asyncio.create_task(self.__sendToClient(constants.CONTROLLER_STATE_MESSAGE, args))
+    self.onRecievedMessageFromMicrocontroller = lambda *args: asyncio.create_task(self.__sendToClient(constants.RECIEVED_MESSAGE_FROM_MICROCONTROLLER, str(args[0])))
+    self.onControllerStateMessage = lambda *args: asyncio.create_task(self.__sendToClient(constants.CONTROLLER_STATE_MESSAGE, args[0]))
+    self._recieveBuffer = ''
 
   async def start(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
     # signal.signal(signal.SIGINT, lambda *args: self.stop())
@@ -24,7 +25,7 @@ class ClientHandler:
     print("FrontendComServer.Client: Connected")
     self.reader = reader
     self.writer = writer
-    #self.eventEmitter.on(constants.RECIEVED_MESSAGE_FROM_MICROCONTROLLER, self.onRecievedMessageFromMicrocontroller)
+    self.eventEmitter.on(constants.RECIEVED_MESSAGE_FROM_MICROCONTROLLER, self.onRecievedMessageFromMicrocontroller)
     self.eventEmitter.on(constants.CONTROLLER_STATE_MESSAGE, self.onControllerStateMessage)
 
     self.isRunning = True
@@ -43,7 +44,7 @@ class ClientHandler:
 
   async def __sendToClient(self, topic, data):
     try:
-      print("FrontendComServer.Client: sendToClient {msg}".format(msg = data))
+      #print("FrontendComServer.Client: sendToClient {msg}".format(msg = data))
       msg = {}
       msg['topic'] = topic
       msg['data'] = data
@@ -56,6 +57,22 @@ class ClientHandler:
         self.isRunning = False
         return      
 
+  def __tryFindJSONMessage(self, str):
+    numStartBracers = 0
+    messageStart = -1
+    messageEnd = -1
+    for idx, val, in enumerate(str):
+      if (val == '{'):
+        numStartBracers += 1
+        if (messageStart < 0):
+          messageStart = idx
+      if (val == '}'):
+        numStartBracers -= 1
+        if (messageEnd < 0):
+          messageEnd = idx
+          break
+    return (messageStart, messageEnd)
+      
   async def __recieverThread(self):
     while self.isRunning:
       try:
@@ -70,10 +87,19 @@ class ClientHandler:
 
         if not data:
             break
-
-        message = json.loads(data.decode('utf-8'))
-        print("incomming message: {msg}".format(msg = message))
-        self.eventEmitter.emit(constants.FRONTEND_BASE_MESSAGE+message['topic'], message)
+        
+        self._recieveBuffer += data.decode('utf-8')
+        print("data: {d}".format(d = data))
+        while True:
+          messageStart, messageEnd = self.__tryFindJSONMessage(self._recieveBuffer)
+          if (messageStart >= 0 and messageEnd >= 0):
+            messageString = self._recieveBuffer[messageStart:messageEnd + 1]
+            self._recieveBuffer = self._recieveBuffer[messageEnd + 1:]
+            message = json.loads(messageString)
+            print("incomming message: {msg}".format(msg = message))
+            self.eventEmitter.emit(constants.FRONTEND_BASE_MESSAGE+message['topic'], message)
+          else:
+            break          
       except Exception as e:
         print("FrontendComServer.Client: Exception {e}".format(e=e))
         self.unregisterEvent()

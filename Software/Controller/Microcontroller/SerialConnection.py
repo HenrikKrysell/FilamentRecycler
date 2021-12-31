@@ -9,6 +9,7 @@ import asyncio
 import serial_asyncio
 from bitstring import BitArray
 from .Messages.FromMicrocontroller.MessageParser import parseMessage
+import traceback
 
 class SerialConnection():
 
@@ -48,13 +49,14 @@ class SerialConnection():
           parsedMessage = self.consumeMessageBufferAndParseMessage()
 
           if parsedMessage:
-              print("SerialConnection::{msg}".format(msg = parsedMessage))
+              #print("SerialConnection::{msg}".format(msg = parsedMessage))
               self.eventEmitter.emit(constants.RECIEVED_MESSAGE_FROM_MICROCONTROLLER, parsedMessage)
           else:
             break
       except Exception as error:
         #e = sys.exc_info()[0]
         print("SerialConnection: Error: %s" % error)
+        traceback.print_exc()
 
     def connection_lost(self, exc):
         print('SerialConnection: Connection closed')
