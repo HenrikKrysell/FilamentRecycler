@@ -8,7 +8,11 @@ abstract class StreamingClient implements IStreamingClient {
 
     constructor(context: STREAMING_CONTEXT, parameters: Array<string> = []) {
         this.socketConnectionHandlers = [];
-        const socket = new WebSocket('ws://localhost:3000', ['context', context, ...parameters]);
+        const socket = new WebSocket(`ws://${window.location.hostname}:3000`, [
+            'context',
+            context,
+            ...parameters,
+        ]);
         socket.onerror = (ev: Event) => {
             console.error('Socket connection error', ev);
             if (this.socketErrorHandler) {
