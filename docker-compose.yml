@@ -18,7 +18,7 @@ services:
   #     - "/dev/ttyUSB0:/dev/ttyUSB0"
 
   gateway:
-    image: node:14-alpine
+    image: node:14.18.1-alpine3.12
     ports:
       - "3000:3000"
     restart: always
@@ -35,7 +35,7 @@ services:
       - "host.docker.internal:host-gateway"
 
   frontend:
-    image: node:14-alpine
+    image: node:14.18.1-alpine3.12
     restart: always
     command: ["yarn", "workspace", "filament-recycler-frontend", "run", "start"]
     env_file:

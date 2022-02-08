@@ -133,3 +133,6 @@ node_modules/
 
 #c++ extensions
 .vscode/c_cpp_properties.json
+
+core
+*.tsbuildinfo
