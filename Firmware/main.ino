@@ -5,6 +5,7 @@
 #include "src/Messages/Incomming/MessageTypes.h"
 #include "src/Messages/Outgoing/MessageTypes.h"
 #include "src/Messages/Outgoing/Utils.h"
+#include "src/Messages/Outgoing/TelemetricDataMessage.h"
 #include "src/AnalogSignalPoller.h"
 #include "src/DigitalSignalFlankCounter.h"
 
@@ -13,6 +14,7 @@ enum class CONTROLLER_STATE {
   PRODUCTION = 1,
   CONFIGURATION = 2,
   IDLE = 3,
+  EMERGENCY_STOP = 4,
 };
 
 const int MESSAGE_SIZE = sizeof(SetValuesMessage);
@@ -42,37 +44,82 @@ bool waitForInitMessage() {
     bytesRead = Serial.readBytesUntil(TERMINATOR, buffer, sizeof(InitMessage));
   }
   
-
   InitMessage *msg = (InitMessage*)&buffer;
   if (msg->messageType != INCOMMING_MESSAGE_TYPE::INITIALIZE) {
     sendError(ERROR_CODE::INVALID_INITIALIZE_MESSAGE);
     return false;
   }
 
-  augerMotor.init(msg->motorINAPin, msg->motorINBPin, msg->motorPWMPin);
+  ////////////////
+  // DEBUG
+  // Serial.write(DEBUG_MESSAGE_START);
+  // Serial.println("InitMessage: ");
+  // Serial.print("heaterPin: ");
+  // Serial.println(msg->heaterPin);
+  // Serial.print("motorDriver.inAPin: ");
+  // Serial.println(msg->motorDriver.inAPin);
+  // Serial.print("motorRPMCounter.pollIntervalMs: ");
+  // Serial.println(msg->motorRPMCounter.pollIntervalMs);
+  // Serial.print("pullerStepper.stepPin: ");
+  // Serial.println(msg->pullerStepper.stepPin);
+  // Serial.print("filamentGuideStepper.dirPin: ");
+  // Serial.println(msg->filamentGuideStepper.dirPin);
+  // Serial.print("telemetricDataIntervalMs: ");
+  // Serial.println(msg->telemetricDataIntervalMs);
+  // Serial.print("thermistorConfig.numSamples: ");
+  // Serial.println(msg->thermistorConfig.numSamples);
+  // Serial.print("filamentDiamterConfig.pin: ");
+  // Serial.println(msg->filamentDiamterConfig.pin);
+  // Serial.print("'");
+  ////////////////
+
+  augerMotor.init(msg->motorDriver.inAPin, msg->motorDriver.inBPin, msg->motorDriver.pwmPin);
   augerMotor.setSpeed(0);
-  augerMotor.setRotation((MotorRotationDirection)msg->motorDir);
+  augerMotor.setRotation((MotorRotationDirection)msg->motorDriver.dir);
 
-  rpmCounter.init(msg->motorRPMCounterPin, msg->motorRPMCounterPollIntervalMs, 100);
+  rpmCounter.init(msg->motorRPMCounter.pin, msg->motorRPMCounter.pollIntervalMs, msg->motorRPMCounter.delayBetweenFirstPoll);
 
-  pullerStepperMotor.init(msg->pullerStepperDirPin, msg->pullerStepperStepPin, msg->pullerStepperEnablePin);
-  pullerStepperMotor.setRotation((MotorRotationDirection)msg->pullerStepperDirValue);
+  pullerStepperMotor.init(msg->pullerStepper.dirPin, msg->pullerStepper.stepPin, msg->pullerStepper.enablePin);
+  pullerStepperMotor.setRotation((MotorRotationDirection)msg->pullerStepper.dirValue);
   
-  winderStepperMotor.init(msg->winderStepperDirPin, msg->winderStepperStepPin, msg->winderStepperEnablePin);
-  winderStepperMotor.setRotation((MotorRotationDirection)msg->winderStepperDirValue);
+  winderStepperMotor.init(msg->winderStepper.dirPin, msg->winderStepper.stepPin, msg->winderStepper.enablePin);
+  winderStepperMotor.setRotation((MotorRotationDirection)msg->winderStepper.dirValue);
 
-  filamentGuideStepperMotor.init(msg->filamentGuideDirPin, msg->filamentGuideStepPin, msg->filamentGuideEnablePin);
-  filamentGuideStepperMotor.setRotation((MotorRotationDirection)msg->filamentGuideDirValue);
+  filamentGuideStepperMotor.init(msg->filamentGuideStepper.dirPin, msg->filamentGuideStepper.stepPin, msg->filamentGuideStepper.enablePin);
+  filamentGuideStepperMotor.setRotation((MotorRotationDirection)msg->filamentGuideStepper.dirValue);
 
-  // TODO! calculate a good delay between each analog poller to not choke the cpu
-  // this hardcoded value is only for a poll intervall of 500ms
-  thermistorPoller.init(msg->thermistorAnalogPin, msg->thermistorPollIntervalMs, 125);
-  winderArmPoller.init(msg->winderArmAnalogPin, msg->winderArmPollIntervalMs, 250);
-  filamentDiameterPoller.init(msg->filamentDiameterAnalogPin, msg->filamentDiameterPollIntervalMs, 375);
-  telemetricDataIntervalMs = msg->telemetricDataIntervalMs;
+  // // TODO! calculate a good delay between each analog poller to not choke the cpu
+  // // this hardcoded value is only for a poll intervall of 500ms
+  // thermistorPoller.init(msg->thermistorAnalogPin, msg->thermistorPollIntervalMs, 125, 8, 1);
+  // winderArmPoller.init(msg->winderArmAnalogPin, msg->winderArmPollIntervalMs, 250, 1, 1);
+  // filamentDiameterPoller.init(msg->filamentDiameterAnalogPin, msg->filamentDiameterPollIntervalMs, 375, 1, 1);
+  thermistorPoller.init(
+    msg->thermistorConfig.pin,
+    msg->thermistorConfig.pollIntervalMs,
+    msg->thermistorConfig.delayBetweenFirstPoll,
+    msg->thermistorConfig.numSamples,
+    msg->thermistorConfig.delayBetweenSamples
+  );
+  winderArmPoller.init(
+    msg->winderArmConfig.pin,
+    msg->winderArmConfig.pollIntervalMs,
+    msg->winderArmConfig.delayBetweenFirstPoll,
+    msg->winderArmConfig.numSamples,
+    msg->winderArmConfig.delayBetweenSamples
+  );
+  filamentDiameterPoller.init(
+    msg->filamentDiamterConfig.pin,
+    msg->filamentDiamterConfig.pollIntervalMs,
+    msg->filamentDiamterConfig.delayBetweenFirstPoll,
+    msg->filamentDiamterConfig.numSamples,
+    msg->filamentDiamterConfig.delayBetweenSamples
+  );
+
+  telemetricDataIntervalMs = msg->telemetricDataIntervalMs;  
   lastTelemetricTime = millis();
 
   heaterPin = msg->heaterPin;
+  pinMode(heaterPin, OUTPUT);
 
   return true;
 }
@@ -86,6 +133,7 @@ void setup() {
   }
 
   state = CONTROLLER_STATE::PRODUCTION;
+  //state = CONTROLLER_STATE::INITIALIZATION;
 
   sendMessage(OUTGOING_MESSAGE_TYPE::INITIALIZE_DONE);
 }
@@ -96,14 +144,19 @@ void handleMessage() {
 
   byte buffer[MESSAGE_SIZE];
   Serial.readBytes(buffer, MESSAGE_SIZE);
-  switch (buffer[0])
+  MessageHeader *header = (MessageHeader*)&buffer[0];
+
+  switch (header->messageType)
   {
   case INCOMMING_MESSAGE_TYPE::SET_VALUES:
     {
       SetValuesMessage *msg = (SetValuesMessage*)&buffer;
       augerMotor.setSpeed(msg->augerMotorSpeed);
       winderStepperMotor.setRPM(msg->winderStepperRPM);
-      pullerStepperMotor.setRPM(msg->pullerStepperRPM);      
+      pullerStepperMotor.setRPM(msg->pullerStepperRPM);
+
+      digitalWrite(heaterPin, msg->messageHeader.turnOnHeater);
+      state = msg->messageHeader.emergencyStop ? CONTROLLER_STATE::EMERGENCY_STOP : state;
     }
     break;
   
@@ -131,7 +184,14 @@ void loop() {
 
     if (millis() - lastTelemetricTime > telemetricDataIntervalMs) {
       lastTelemetricTime = millis();
-      sendTelemetricData(thermistorPoller.getValue(), rpmCounter.getCount(), winderArmPoller.getValue(), filamentDiameterPoller.getValue());
+      sendTelemetricData(
+        thermistorPoller.getValue(), 
+        rpmCounter.getCount(), 
+        winderArmPoller.getValue(), 
+        filamentDiameterPoller.getValue(),
+        true,
+        false
+      );
       rpmCounter.resetCount();
     }
     break;
@@ -140,6 +200,9 @@ void loop() {
   case CONTROLLER_STATE::IDLE:
     break;
   case CONTROLLER_STATE::CONFIGURATION:
+    break;
+  case CONTROLLER_STATE::EMERGENCY_STOP:
+    digitalWrite(heaterPin, 0);
     break;
   default:
     break;

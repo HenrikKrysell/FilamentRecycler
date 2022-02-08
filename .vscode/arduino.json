@@ -3,5 +3,5 @@
     "board": "arduino:avr:mega",
     "sketch": "Firmware/main.ino",
     "programmer": "arduino:avrisp",
-    "port": "/dev/ttyUSB0"
+    "port": "/dev/ttyUSB1"
 }

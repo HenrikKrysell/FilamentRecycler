@@ -1,5 +1,7 @@
+from xmlrpc.client import boolean
 import bitstring
 from .ToMicrocontrollerBaseMessage import ToMicrocontrollerBaseMessage
+
 
 class SetValuesMessage(ToMicrocontrollerBaseMessage):
     def __init__(self) -> None:
@@ -9,9 +11,27 @@ class SetValuesMessage(ToMicrocontrollerBaseMessage):
         self._winderStepperRPM = 0
         self._pullerStepperRPM = 0
         self._filamentGuideSteps = 0
+        self._turnOnHeater = False
+        self._emergencyStop = False
 
     @property
-    def augerMotorSpeed(self):
+    def emergencyStop(self) -> bool:
+        return self._emergencyStop
+
+    @emergencyStop.setter
+    def emergencyStop(self, value: bool):
+        self._emergencyStop = value
+
+    @property
+    def turnOnHeater(self) -> bool:
+        return self._turnOnHeater
+
+    @turnOnHeater.setter
+    def turnOnHeater(self, value: bool):
+        self._turnOnHeater = value
+
+    @property
+    def augerMotorSpeed(self) -> int:
         return self._augerMotorSpeed
 
     @augerMotorSpeed.setter
@@ -19,7 +39,7 @@ class SetValuesMessage(ToMicrocontrollerBaseMessage):
         self._augerMotorSpeed = value
 
     @property
-    def winderStepperRPM(self):
+    def winderStepperRPM(self) -> int:
         return self._winderStepperRPM
 
     @winderStepperRPM.setter
@@ -27,7 +47,7 @@ class SetValuesMessage(ToMicrocontrollerBaseMessage):
         self._winderStepperRPM = value
 
     @property
-    def pullerStepperRPM(self):
+    def pullerStepperRPM(self) -> int:
         return self._pullerStepperRPM
 
     @pullerStepperRPM.setter
@@ -35,23 +55,27 @@ class SetValuesMessage(ToMicrocontrollerBaseMessage):
         self._pullerStepperRPM = value
 
     @property
-    def filamentGuideSteps(self):
+    def filamentGuideSteps(self) -> int:
         return self._filamentGuideSteps
 
     @filamentGuideSteps.setter
     def filamentGuideSteps(self, value: int):
         self._filamentGuideSteps = value
 
-
     def generateControllerMessage(self) -> bytes:
-        bits = bitstring.pack(\
-            '>BBBBB',\
-            9,\
-            self.augerMotorSpeed,\
-            self.winderStepperRPM,\
-            self.pullerStepperRPM,\
+        header = bitstring.pack(
+            'bool, bool, bool, bool, uint:4',
+            False,
+            False,
+            self.emergencyStop,
+            self.turnOnHeater,
+            9)
+
+        bits = header + bitstring.pack(
+            '>BBBB',
+            self.augerMotorSpeed,
+            self.winderStepperRPM,
+            self.pullerStepperRPM,
             self.filamentGuideSteps)
 
         return bits.tobytes()
-
-

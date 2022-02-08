@@ -3,43 +3,56 @@
 
 #include "../../MotorRotationDirection.h"
 
+struct StepperConfig
+{
+  byte enablePin;
+  byte stepPin;
+  byte dirPin;
+  byte dirValue;
+} __attribute__((__packed__));
+
+struct OlimexMotorDriverConfig
+{
+  byte inAPin;
+  byte inBPin;
+  byte pwmPin;
+  byte dir; // 0 = clockwise, 1 = Counter clockwise
+} __attribute__((__packed__));
+
+struct AnalogInputConfig
+{
+  int pollIntervalMs;
+  int delayBetweenFirstPoll;
+  int delayBetweenSamples;
+  byte pin;
+  byte numSamples;
+} __attribute__((__packed__));
+
+struct CounterConfig
+{
+  byte pin;
+  int pollIntervalMs;
+  int delayBetweenFirstPoll;
+} __attribute__((__packed__));
+
 struct InitMessage
 {
   byte messageType;
 
-  byte motorINAPin;
-  byte motorINBPin;
-  byte motorPWMPin;
-  byte motorDir; // 0 = clockwise, 1 = Counter clockwise
-
-  byte motorRPMCounterPin;
-
-  byte pullerStepperEnablePin;
-  byte pullerStepperStepPin;
-  byte pullerStepperDirPin;
-  byte pullerStepperDirValue;
-
-  byte winderStepperEnablePin;
-  byte winderStepperStepPin;
-  byte winderStepperDirPin;
-  byte winderStepperDirValue;
-
-  byte filamentGuideEnablePin;
-  byte filamentGuideStepPin;
-  byte filamentGuideDirPin;
-  byte filamentGuideDirValue;
-
-  byte thermistorAnalogPin;
   byte heaterPin;
-  byte winderArmAnalogPin;
-  byte filamentDiameterAnalogPin;
   byte filamentGuideEndstopPin;
-
   int telemetricDataIntervalMs;
-  int thermistorPollIntervalMs;
-  int winderArmPollIntervalMs;
-  int filamentDiameterPollIntervalMs;
-  int motorRPMCounterPollIntervalMs;
-};
+
+  OlimexMotorDriverConfig motorDriver;
+  CounterConfig motorRPMCounter;
+
+  StepperConfig pullerStepper;
+  StepperConfig winderStepper;
+  StepperConfig filamentGuideStepper;
+
+  AnalogInputConfig thermistorConfig;
+  AnalogInputConfig winderArmConfig;
+  AnalogInputConfig filamentDiamterConfig;
+} __attribute__((__packed__));
 
 #endif
