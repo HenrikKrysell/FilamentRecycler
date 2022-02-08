@@ -8,6 +8,8 @@ export interface IMessage<T> {
 export interface IStateMessage {
   currentRPM: number;
   targetRPM: number;
+  temperature: number;
+  state: string;
 }
 
 export interface IConsoleMessage {

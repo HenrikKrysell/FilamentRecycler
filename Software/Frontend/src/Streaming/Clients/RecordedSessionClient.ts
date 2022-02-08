@@ -25,8 +25,8 @@ export default class RecordedSessionClient extends AbstractStreamingClient {
 
     onMessage(message: IMessage<unknown>): void {
         if (message.type === MESSAGE_TYPE.CONSOLE_UPDATED) {
-            console.log('STATE_UPDATED');
-            console.log(message);
+            // console.log('STATE_UPDATED');
+            // console.log(message);
             const getProcessnodesResponse = message as IMessage<IConsoleMessage>;
             this.stateManager.mutate(message.data as IState);
         } else if (message.type === MESSAGE_TYPE.ERROR) {

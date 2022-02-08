@@ -9,6 +9,8 @@ const CurrentSession = () => {
         new StateManager({
             currentRPM: 0,
             targetRPM: 0,
+            temperature: 0,
+            state: 'None',
         })
     );
     const [currentState, setCurrentState] = useState(stateManager.current.getState());
@@ -54,6 +56,10 @@ const CurrentSession = () => {
 
     return (
         <div>
+            <div>Current State:</div>
+            <div>{currentState.state}</div>
+            <div>Current Temperature:</div>
+            <div>{currentState.temperature}</div>
             <div>Current RPM:</div>
             <div>{currentState.currentRPM}</div>
             <div>Target RPM:</div>

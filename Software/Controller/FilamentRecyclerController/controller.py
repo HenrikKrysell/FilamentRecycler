@@ -132,7 +132,11 @@ class Controller:
                 time.time(), self._thermistor.temperatureC)
 
         self._eventEmitter.emit(constants.CONTROLLER_STATE_MESSAGE, {
-                                "currentRPM": self._rpmCounter.currentRPM, "targetRPM": self._augerMotorPID.setpoint})
+                                "currentRPM": self._rpmCounter.currentRPM,
+                                "targetRPM": self._augerMotorPID.setpoint,
+                                "temperature": self._thermistor.temperatureC,
+                                "state": self._state,
+                                })
 
     def _onRecievedMessageFromMicrocontroller(self, msg):
         #print("incomming message: {m}".format(m = msg))

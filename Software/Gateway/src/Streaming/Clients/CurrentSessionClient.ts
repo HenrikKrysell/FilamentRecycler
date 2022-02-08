@@ -31,11 +31,13 @@ class CurrentSessionClient extends AbstractStreamingClient implements IStreamCli
         this.controllerEventEmitter.on(
             ControllerMessageType.STATE_UPDATED,
             (msg: IControllerState) => {
-                this.send({
+                this.send<IStateMessage>({
                     type: MESSAGE_TYPE.STATE_UPDATED,
                     data: {
                         currentRPM: msg.currentRPM,
                         targetRPM: msg.targetRPM,
+                        temperature: msg.temperature,
+                        state: msg.state,
                     },
                 });
             }

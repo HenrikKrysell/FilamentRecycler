@@ -16,6 +16,8 @@ export interface IControllerState {
     currentRPM: number;
     targetRPM: number;
     rpmTimestamp: number;
+    temperature: number;
+    state: string;
 }
 
 export interface IControllerConsoleMessage {
