@@ -118,7 +118,7 @@ class Controller:
             initializeMessage.telemetricDataIntervalMs - 100) / 1000
 
         self._heaterPID = PID(Kp=47.707711553863504,
-                              Ki=0.9025762451585112, Kd=630.4247851401528)
+                              Ki=0.9025762451585112, Kd=630.4247851401528, setpoint=170)
         self._heaterPID.sample_time = (
             initializeMessage.thermistorConfig.pollIntervalMs * self._thermistor.NumSamples) / 1000
 
