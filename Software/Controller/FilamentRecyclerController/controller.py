@@ -46,6 +46,8 @@ class Controller:
         self._latestAugerSpeed = 0
         self._thermistor = None
         self._heaterPIDTuner = None
+        self._heaterPID = None
+        self._latestHeaterValue = 0
 
     def __setRPMHandler(self, args):
         print("setRPM: {args}".format(args=args))
@@ -115,6 +117,11 @@ class Controller:
         self._augerMotorPID.sample_time = (
             initializeMessage.telemetricDataIntervalMs - 100) / 1000
 
+        self._heaterPID = PID(Kp=47.707711553863504,
+                              Ki=0.9025762451585112, Kd=630.4247851401528)
+        self._heaterPID.sample_time = (
+            initializeMessage.thermistorConfig.pollIntervalMs * self._thermistor.NumSamples) / 1000
+
         self._eventEmitter.emit(
             constants.SEND_MESSAGE_TO_MICROCONTROLLER, initializeMessage)
 
@@ -130,6 +137,10 @@ class Controller:
         if (self._heaterPIDTuner != None):
             self._heaterPIDTuner.temperature_update(
                 time.time(), self._thermistor.temperatureC)
+        else:
+            self._latestHeaterValue = self._heaterPID(
+                self._thermistor.temperatureC)
+            print("Latest heater value: {h}".format(h=self._latestHeaterValue))
 
         self._eventEmitter.emit(constants.CONTROLLER_STATE_MESSAGE, {
                                 "currentRPM": self._rpmCounter.currentRPM,
@@ -146,7 +157,7 @@ class Controller:
             print("Controller::{m}".format(m=msg))
             self._microcontrollerInitialized = True
             # DEBUG
-            self._onChangeState(CONTROLLER_STATE.HEATER_PID_TUNE)
+            self._onChangeState(CONTROLLER_STATE.PRODUCTION)
         elif (isinstance(msg, TelemetricDataMessage)):
             self.__telemetricDataHandler(msg)
 
@@ -174,6 +185,7 @@ class Controller:
 
     async def __run(self):
         await asyncio.sleep(1)
+        lastDebugTime = time.time()
         while self.isRunning:
             await asyncio.sleep(0.001)
             if (self._state == CONTROLLER_STATE.STOPPED):
@@ -192,7 +204,7 @@ class Controller:
                     pullerStepperRPM=255,
                     filamentGuideSteps=0,
                     emergencyStop=False,
-                    turnOnHeater=False
+                    turnOnHeater=self._latestHeaterValue > 0.9,
                 )
             elif (self._state == CONTROLLER_STATE.HEATER_PID_TUNE):
                 self._setNewValues(
@@ -207,6 +219,16 @@ class Controller:
                     self._onChangeState(CONTROLLER_STATE.STOPPED)
                     self._heaterPIDTuner.calc_final_pid()
                     self._heaterPIDTuner = None
+
+            # DEBUG
+            if (time.time() - lastDebugTime > 1):
+                lastDebugTime = time.time()
+                self._eventEmitter.emit(constants.CONTROLLER_STATE_MESSAGE, {
+                                        "currentRPM": 1,
+                                        "targetRPM": 2,
+                                        "temperature": 3,
+                                        "state": self._state,
+                                        })
 
         print("Closing")
 
