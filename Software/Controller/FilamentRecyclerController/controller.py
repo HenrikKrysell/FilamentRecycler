@@ -138,8 +138,8 @@ class Controller:
             self._heaterPIDTuner.temperature_update(
                 time.time(), self._thermistor.temperatureC)
         else:
-            self._latestHeaterValue = self._heaterPID(
-                self._thermistor.temperatureC)
+            self._latestHeaterValue = max(0., min(1.0, self._heaterPID(
+                self._thermistor.temperatureC)))
             print("Latest heater value: {h}".format(h=self._latestHeaterValue))
 
         self._eventEmitter.emit(constants.CONTROLLER_STATE_MESSAGE, {
@@ -150,7 +150,7 @@ class Controller:
                                 })
 
     def _onRecievedMessageFromMicrocontroller(self, msg):
-        #print("incomming message: {m}".format(m = msg))
+        #print("incomming message: {m}".format(m=msg))
         if (isinstance(msg, WelcomeMessage)):
             self.__sendInitializationMessage()
         elif (isinstance(msg, InitializationCompleteMessage)):
@@ -204,7 +204,7 @@ class Controller:
                     pullerStepperRPM=255,
                     filamentGuideSteps=0,
                     emergencyStop=False,
-                    turnOnHeater=self._latestHeaterValue > 0.9,
+                    turnOnHeater=self._latestHeaterValue > 0,
                 )
             elif (self._state == CONTROLLER_STATE.HEATER_PID_TUNE):
                 self._setNewValues(

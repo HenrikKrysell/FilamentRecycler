@@ -10,12 +10,13 @@ import serial_asyncio
 from bitstring import BitArray
 from .Messages.FromMicrocontroller.MessageParser import parseMessage
 import traceback
+from pymitter import EventEmitter
 
 
 class SerialConnection():
 
     class Connection(asyncio.Protocol):
-        def __init__(self, eventEmitter):
+        def __init__(self, eventEmitter: EventEmitter):
             self.eventEmitter = eventEmitter
             self.buffer = BitArray()
 
