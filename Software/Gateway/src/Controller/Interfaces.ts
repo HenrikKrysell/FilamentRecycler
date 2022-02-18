@@ -1,10 +1,15 @@
-export enum ControllerMessageType {
+export enum FromControllerMessageType {
     CONSOLE_UPDATED = 'console',
     SEND_COMMAND = 'sendCommand',
     STATE_UPDATED = 'state',
-    SET_RPM = 'setRPM',
     ERROR = 'controller_error',
     CONNECTION_ERROR = 'connection_error',
+}
+
+export enum ToControllerMessageType {
+    SET_TARGET_RPM = 'setRPM',
+    SHUTDOWN = 'shutdown',
+    SET_TARGET_TEMPERATURE = 'setTargetTemperature',
 }
 
 export interface IControllerMessage<T> {
@@ -35,6 +40,12 @@ export interface IControllerStateMessage {
 export interface IControllerSetRPMMessage {
     targetRPM: number;
 }
+
+export interface IControllerSetTargetTemperatureMessage {
+    targetTemperature: number;
+}
+
+export interface IControllerShutdownMessage {}
 
 export interface IControllerError {
     message: string;

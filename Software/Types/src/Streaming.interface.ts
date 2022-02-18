@@ -1,7 +1,7 @@
-import { MESSAGE_TYPE } from ".";
+import { FROM_BACKEND_MESSAGE_TYPE, TO_BACKEND_MESSAGE_TYPE } from ".";
 
 export interface IMessage<T> {
-  type: MESSAGE_TYPE;
+  type: FROM_BACKEND_MESSAGE_TYPE | TO_BACKEND_MESSAGE_TYPE;
   data: T;
 }
 
@@ -12,12 +12,9 @@ export interface IStateMessage {
   state: string;
 }
 
+// FROM_BACKEND_MESSAGE_TYPE
 export interface IConsoleMessage {
   messages: Array<string>;
-}
-
-export interface ISetRPMMessage {
-  targetRPM: number;
 }
 
 export interface IErrorMessage {
@@ -31,3 +28,14 @@ export interface IAckMessage {
 export interface ISendCommandMessage {
   message: string;
 }
+
+// TO_BACKEND_MESSAGE_TYPE
+export interface ISetRPMMessage {
+  targetRPM: number;
+}
+
+export interface ISetTargetTemperatureMessage {
+  targetTemperature: number;
+}
+
+export interface IShutdownMessage {}

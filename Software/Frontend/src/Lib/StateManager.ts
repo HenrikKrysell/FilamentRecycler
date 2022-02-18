@@ -2,6 +2,7 @@ export interface IState {
     currentRPM: number;
     targetRPM: number;
     temperature: number;
+    targetTemperature: number;
     state: string;
 }
 

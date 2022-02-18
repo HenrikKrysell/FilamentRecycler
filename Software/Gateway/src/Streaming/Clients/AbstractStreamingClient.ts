@@ -1,7 +1,7 @@
 import { WebSocket, RawData } from 'ws';
 import { v4 as uuidv4 } from 'uuid';
 import { IStreamClient, IStreamingClientProperties } from '../../Interfaces/Streaming.interface';
-import { IMessage, IErrorMessage, MESSAGE_TYPE } from 'fr-types';
+import { IMessage, IErrorMessage, FROM_BACKEND_MESSAGE_TYPE } from 'fr-types';
 
 export default abstract class AbstractStreamingClient implements IStreamClient {
     private socket: WebSocket;
@@ -52,6 +52,6 @@ export default abstract class AbstractStreamingClient implements IStreamClient {
     }
 
     protected sendError(message: string): void {
-        this.send<IErrorMessage>({ type: MESSAGE_TYPE.ERROR, data: { message } });
+        this.send<IErrorMessage>({ type: FROM_BACKEND_MESSAGE_TYPE.ERROR, data: { message } });
     }
 }

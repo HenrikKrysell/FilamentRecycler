@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { ControllerMessageType, IControllerConsoleMessage } from './Interfaces';
+import { FromControllerMessageType, IControllerConsoleMessage } from './Interfaces';
 
 class ConsoleLog {
     private controllerEventEmitter: EventEmitter;
@@ -13,13 +13,13 @@ class ConsoleLog {
         this.logLimit = logLimit;
         this.controllerEventEmitter = controllerEventEmitter;
         this.controllerEventEmitter.on(
-            ControllerMessageType.CONSOLE_UPDATED,
+            FromControllerMessageType.CONSOLE_UPDATED,
             (message: IControllerConsoleMessage) => {
                 if (this.log.length >= logLimit) {
                     this.log.shift();
                 }
                 this.log.push(message.message);
-                this.consoleLogEmitter.emit(ControllerMessageType.CONSOLE_UPDATED, message);
+                this.consoleLogEmitter.emit(FromControllerMessageType.CONSOLE_UPDATED, message);
             }
         );
     }

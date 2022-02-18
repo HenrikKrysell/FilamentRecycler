@@ -7,12 +7,12 @@ import {
     IErrorMessage,
     IAckMessage,
     ISendCommandMessage,
-    MESSAGE_TYPE,
+    FROM_BACKEND_MESSAGE_TYPE,
     IConsoleMessage,
 } from 'fr-types';
 import { IStreamClient, IStreamingClientProperties } from '../../Interfaces/Streaming.interface';
 import { EventEmitter } from 'events';
-import { ConsoleLog, ControllerMessageType, IControllerConsoleMessage } from '../../Controller';
+import { ConsoleLog, FromControllerMessageType, IControllerConsoleMessage } from '../../Controller';
 
 class ConsoleClient extends AbstractStreamingClient implements IStreamClient {
     private controllerEventEmitter: EventEmitter;
@@ -31,12 +31,12 @@ class ConsoleClient extends AbstractStreamingClient implements IStreamClient {
 
         this.consoleLog
             .getEventEmitter()
-            .on(ControllerMessageType.CONSOLE_UPDATED, (message: IControllerConsoleMessage) => {
+            .on(FromControllerMessageType.CONSOLE_UPDATED, (message: IControllerConsoleMessage) => {
                 const data: IConsoleMessage = {
                     messages: [message.message],
                 };
                 this.send({
-                    type: MESSAGE_TYPE.CONSOLE_UPDATED,
+                    type: FROM_BACKEND_MESSAGE_TYPE.CONSOLE_UPDATED,
                     data,
                 });
             });
@@ -48,7 +48,7 @@ class ConsoleClient extends AbstractStreamingClient implements IStreamClient {
                 messages: log,
             };
             this.send({
-                type: MESSAGE_TYPE.CONSOLE_UPDATED,
+                type: FROM_BACKEND_MESSAGE_TYPE.CONSOLE_UPDATED,
                 data,
             });
         }
@@ -56,7 +56,7 @@ class ConsoleClient extends AbstractStreamingClient implements IStreamClient {
 
     onMessage(message: IMessage<unknown>): void {
         switch (message.type) {
-            case MESSAGE_TYPE.SEND_COMMAND:
+            case FROM_BACKEND_MESSAGE_TYPE.SEND_COMMAND:
                 const setTargetRpmMessage = message as IMessage<ISendCommandMessage>;
                 this.handleSendCommand(setTargetRpmMessage.data);
                 break;
@@ -64,9 +64,9 @@ class ConsoleClient extends AbstractStreamingClient implements IStreamClient {
     }
 
     handleSendCommand(message: ISendCommandMessage): void {
-        this.controllerEventEmitter.emit(ControllerMessageType.SEND_COMMAND, message.message);
+        this.controllerEventEmitter.emit(FromControllerMessageType.SEND_COMMAND, message.message);
         this.send({
-            type: MESSAGE_TYPE.ACK,
+            type: FROM_BACKEND_MESSAGE_TYPE.ACK,
             data: {
                 success: true,
             },

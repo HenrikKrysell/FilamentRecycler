@@ -3,7 +3,7 @@ import {
     IErrorMessage,
     IMessage,
     IStateMessage,
-    MESSAGE_TYPE,
+    FROM_BACKEND_MESSAGE_TYPE,
     STREAMING_CONTEXT,
 } from 'fr-types';
 import { IState, StateManager } from '../../Lib/StateManager';
@@ -23,17 +23,17 @@ export default class ConsoleClient extends AbstractStreamingClient {
     }
 
     onMessage(message: IMessage<unknown>): void {
-        if (message.type === MESSAGE_TYPE.CONSOLE_UPDATED) {
+        if (message.type === FROM_BACKEND_MESSAGE_TYPE.CONSOLE_UPDATED) {
             if (this.consoleMessageHandler) {
                 const consoleMessage = message as IMessage<IConsoleMessage>;
                 this.consoleMessageHandler(consoleMessage.data.messages);
             }
-        } else if (message.type === MESSAGE_TYPE.ERROR) {
+        } else if (message.type === FROM_BACKEND_MESSAGE_TYPE.ERROR) {
             if (this.errorHandler) {
                 const errorMessage = message as IMessage<IErrorMessage>;
                 this.errorHandler(errorMessage.data.message);
             }
-        } else if (message.type === MESSAGE_TYPE.ACK) {
+        } else if (message.type === FROM_BACKEND_MESSAGE_TYPE.ACK) {
         } else {
             throw new Error('Unsupported context message');
         }

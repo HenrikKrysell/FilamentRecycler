@@ -1,6 +1,13 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { IState, StateManager } from '../../Lib/StateManager';
-import { IMessage, ISetRPMMessage, MESSAGE_TYPE } from 'fr-types';
+import {
+    IMessage,
+    ISetRPMMessage,
+    FROM_BACKEND_MESSAGE_TYPE,
+    TO_BACKEND_MESSAGE_TYPE,
+    ISetTargetTemperatureMessage,
+    IShutdownMessage,
+} from 'fr-types';
 import { CurrentSessionClient } from '../../Streaming';
 import { InputEx } from '../../Components';
 
@@ -9,6 +16,7 @@ const CurrentSession = () => {
         new StateManager({
             currentRPM: 0,
             targetRPM: 0,
+            targetTemperature: 0,
             temperature: 0,
             state: 'None',
         })
@@ -46,10 +54,28 @@ const CurrentSession = () => {
 
     const setTargetRPM = (targetRPM: string) => {
         const message: IMessage<ISetRPMMessage> = {
-            type: MESSAGE_TYPE.SET_RPM,
+            type: TO_BACKEND_MESSAGE_TYPE.SET_RPM,
             data: {
                 targetRPM: Number.parseFloat(targetRPM),
             },
+        };
+        currentSessionClient.current?.send(message);
+    };
+
+    const setTargetTemperature = (targetTemperature: string) => {
+        const message: IMessage<ISetTargetTemperatureMessage> = {
+            type: TO_BACKEND_MESSAGE_TYPE.SET_TARGET_TEMPERATURE,
+            data: {
+                targetTemperature: Number.parseFloat(targetTemperature),
+            },
+        };
+        currentSessionClient.current?.send(message);
+    };
+
+    const shutdownServer = () => {
+        const message: IMessage<IShutdownMessage> = {
+            type: TO_BACKEND_MESSAGE_TYPE.SHUTDOWN,
+            data: {},
         };
         currentSessionClient.current?.send(message);
     };
@@ -60,6 +86,13 @@ const CurrentSession = () => {
             <div>{currentState.state}</div>
             <div>Current Temperature:</div>
             <div>{currentState.temperature}</div>
+            <div>Target Temperature:</div>
+            <div>
+                <InputEx
+                    onCommitValue={setTargetTemperature}
+                    initialValue={currentState.targetTemperature.toString()}
+                />
+            </div>
             <div>Current RPM:</div>
             <div>{currentState.currentRPM}</div>
             <div>Target RPM:</div>
@@ -69,6 +102,7 @@ const CurrentSession = () => {
                     initialValue={currentState.targetRPM.toString()}
                 />
             </div>
+            <button onClick={shutdownServer}>Shutdown server</button>
         </div>
     );
 };

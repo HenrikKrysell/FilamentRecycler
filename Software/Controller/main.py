@@ -8,8 +8,10 @@ from pymitter import EventEmitter
 from Microcontroller.SerialConnection import SerialConnection
 from time import sleep
 from Microcontroller.MCSimulator import MCSimulator
+from FrontendCommunication.Messages.ShutdownMessage import ShutdownMessage
 import constants
 import asyncio
+import os
 # import Microcontroller.Messages.ToMicrocontroller.RawStringMessage import RawStringMessage
 
 # Gracefully close the app when docker closes
@@ -28,8 +30,16 @@ def stop(controller: Controller, serialConnection: SerialConnection, frontend: F
     frontend.stop()
 
 
+def shutdownServer(args):
+    print("SHUTDOWN")
+    os.system("sudo shutdown -h now")
+
+
 async def main():
     eventEmitter = EventEmitter()
+
+    eventEmitter.on(
+        constants.FRONTEND_BASE_MESSAGE + ShutdownMessage.TOPIC, shutdownServer)
 
     controller = Controller(eventEmitter)
     controllerTask = asyncio.create_task(controller.start())

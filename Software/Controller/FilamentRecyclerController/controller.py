@@ -1,6 +1,9 @@
 from enum import IntEnum
 from xmlrpc.client import boolean
 
+from FrontendCommunication.Messages.SetTargetRPMMessage import SetTargetRPMMessage
+from FrontendCommunication.Messages.SetTargetTemperatureMessage import SetTargetTemperatureMessage
+
 from .PIDTuner import PIDTuner
 from .RPMCounter import RPMCounter
 from .Thermistor import Thermistor
@@ -37,7 +40,9 @@ class Controller:
         self._setNewValuesIntervalSec = 0.5
 
         self._eventEmitter.on(
-            constants.FRONTEND_BASE_MESSAGE+'setRPM', self.__setRPMHandler)
+            constants.FRONTEND_BASE_MESSAGE+SetTargetRPMMessage.TOPIC, self.__setRPMHandler)
+        self._eventEmitter.on(
+            constants.FRONTEND_BASE_MESSAGE+SetTargetTemperatureMessage.TOPIC, self.__setTargetTemperatureHandler)
         self._eventEmitter.on(constants.RECIEVED_MESSAGE_FROM_MICROCONTROLLER,
                               self._onRecievedMessageFromMicrocontroller)
         self._microcontrollerInitialized = False
@@ -49,10 +54,15 @@ class Controller:
         self._heaterPID = None
         self._latestHeaterValue = 0
 
-    def __setRPMHandler(self, args):
+    def __setRPMHandler(self, args: SetTargetRPMMessage):
         print("setRPM: {args}".format(args=args))
         if (self._augerMotorPID):
-            self._augerMotorPID.setpoint = args['targetRPM']
+            self._augerMotorPID.setpoint = args.targetRPM  # args['targetRPM']
+
+    def __setTargetTemperatureHandler(self, args: SetTargetTemperatureMessage):
+        print("setTargetTemperature: {args}".format(args=args))
+        if (self._heaterPID):
+            self._heaterPID.setpoint = args.targetTemperature
 
     def __sendInitializationMessage(self):
         # Read this data from the database instead!
@@ -118,7 +128,7 @@ class Controller:
             initializeMessage.telemetricDataIntervalMs - 100) / 1000
 
         self._heaterPID = PID(Kp=47.707711553863504,
-                              Ki=0.9025762451585112, Kd=630.4247851401528, setpoint=170)
+                              Ki=0.9025762451585112, Kd=630.4247851401528, setpoint=0)
         self._heaterPID.sample_time = (
             initializeMessage.thermistorConfig.pollIntervalMs * self._thermistor.NumSamples) / 1000
 
@@ -147,6 +157,7 @@ class Controller:
                                 "targetRPM": self._augerMotorPID.setpoint,
                                 "temperature": self._thermistor.temperatureC,
                                 "state": self._state,
+                                "targetTemperature": self._heaterPID.setpoint,
                                 })
 
     def _onRecievedMessageFromMicrocontroller(self, msg):
@@ -219,16 +230,6 @@ class Controller:
                     self._onChangeState(CONTROLLER_STATE.STOPPED)
                     self._heaterPIDTuner.calc_final_pid()
                     self._heaterPIDTuner = None
-
-            # DEBUG
-            if (time.time() - lastDebugTime > 1):
-                lastDebugTime = time.time()
-                self._eventEmitter.emit(constants.CONTROLLER_STATE_MESSAGE, {
-                                        "currentRPM": 1,
-                                        "targetRPM": 2,
-                                        "temperature": 3,
-                                        "state": self._state,
-                                        })
 
         print("Closing")
 

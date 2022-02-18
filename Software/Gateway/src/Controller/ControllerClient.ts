@@ -1,13 +1,16 @@
 import { Socket } from 'net';
 import { EventEmitter } from 'events';
 import {
-    ControllerMessageType,
+    FromControllerMessageType,
     IControllerConsoleMessage,
     IControllerError,
     IControllerMessage,
     IControllerSetRPMMessage,
+    IControllerSetTargetTemperatureMessage,
+    IControllerShutdownMessage,
     IControllerState,
     IControllerStateMessage,
+    ToControllerMessageType,
 } from '.';
 
 export class ControllerClient {
@@ -24,13 +27,35 @@ export class ControllerClient {
         this.buffer = '';
         this.isConnected = false;
 
-        this.eventEmitter.on(ControllerMessageType.SET_RPM, (msg: IControllerSetRPMMessage) => {
-            const message = {
-                topic: ControllerMessageType.SET_RPM,
-                targetRPM: msg.targetRPM,
-            };
-            this.client.write(JSON.stringify(message));
-        });
+        this.eventEmitter.on(
+            ToControllerMessageType.SET_TARGET_RPM,
+            (msg: IControllerSetRPMMessage) => {
+                const message = {
+                    topic: ToControllerMessageType.SET_TARGET_RPM,
+                    targetRPM: msg.targetRPM,
+                };
+                this.client.write(JSON.stringify(message));
+            }
+        );
+        this.eventEmitter.on(
+            ToControllerMessageType.SET_TARGET_TEMPERATURE,
+            (msg: IControllerSetTargetTemperatureMessage) => {
+                const message = {
+                    topic: ToControllerMessageType.SET_TARGET_TEMPERATURE,
+                    targetTemperature: msg.targetTemperature,
+                };
+                this.client.write(JSON.stringify(message));
+            }
+        );
+        this.eventEmitter.on(
+            ToControllerMessageType.SHUTDOWN,
+            (msg: IControllerShutdownMessage) => {
+                const message = {
+                    topic: ToControllerMessageType.SHUTDOWN,
+                };
+                this.client.write(JSON.stringify(message));
+            }
+        );
     }
 
     private TryParseMessage(str: string) {
@@ -77,13 +102,13 @@ export class ControllerClient {
                     if (parsedMessage.topic === 'CONTROLLER_STATE_MESSAGE') {
                         const msg = parsedMessage as IControllerMessage<IControllerState>;
 
-                        this.eventEmitter.emit(ControllerMessageType.STATE_UPDATED, msg.data);
+                        this.eventEmitter.emit(FromControllerMessageType.STATE_UPDATED, msg.data);
                     }
                     if (parsedMessage.topic === 'RECIEVED_MESSAGE_FROM_MICROCONTROLLER') {
                         const msg: IControllerConsoleMessage = {
                             message: parsedMessage.data as string,
                         };
-                        this.eventEmitter.emit(ControllerMessageType.CONSOLE_UPDATED, msg);
+                        this.eventEmitter.emit(FromControllerMessageType.CONSOLE_UPDATED, msg);
                         //console.log(msg.message);
                     }
                 }
@@ -95,7 +120,7 @@ export class ControllerClient {
             const msg: IControllerError = {
                 message: error.message,
             };
-            this.eventEmitter.emit(ControllerMessageType.CONNECTION_ERROR, msg);
+            this.eventEmitter.emit(FromControllerMessageType.CONNECTION_ERROR, msg);
 
             console.error(`Unable to connect to controller software ${msg.message}`);
             this.client.destroy();
@@ -106,7 +131,7 @@ export class ControllerClient {
             const msg: IControllerConsoleMessage = {
                 message: '[Connection closed]',
             };
-            this.eventEmitter.emit(ControllerMessageType.CONSOLE_UPDATED, msg);
+            this.eventEmitter.emit(FromControllerMessageType.CONSOLE_UPDATED, msg);
             console.log(msg.message);
 
             console.log('Sheduling reconnect attemppt');
@@ -118,7 +143,7 @@ export class ControllerClient {
             const msg: IControllerConsoleMessage = {
                 message: '[Connect to controller]',
             };
-            this.eventEmitter.emit(ControllerMessageType.CONSOLE_UPDATED, msg);
+            this.eventEmitter.emit(FromControllerMessageType.CONSOLE_UPDATED, msg);
             console.log(msg.message);
         });
     }
