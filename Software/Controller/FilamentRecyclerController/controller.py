@@ -3,6 +3,7 @@ from xmlrpc.client import boolean
 
 from FrontendCommunication.Messages.SetTargetRPMMessage import SetTargetRPMMessage
 from FrontendCommunication.Messages.SetTargetTemperatureMessage import SetTargetTemperatureMessage
+from FilamentRecyclerController.Heater import Heater
 
 from .PIDTuner import PIDTuner
 from .RPMCounter import RPMCounter
@@ -52,6 +53,7 @@ class Controller:
         self._thermistor = None
         self._heaterPIDTuner = None
         self._heaterPID = None
+        self._heater = None  # DEBUG
         self._latestHeaterValue = 0
 
     def __setRPMHandler(self, args: SetTargetRPMMessage):
@@ -61,8 +63,10 @@ class Controller:
 
     def __setTargetTemperatureHandler(self, args: SetTargetTemperatureMessage):
         print("setTargetTemperature: {args}".format(args=args))
-        if (self._heaterPID):
+        if (self._heaterPID != None):
             self._heaterPID.setpoint = args.targetTemperature
+        elif (self._heater != None):
+            self._heater.target_temp = args.targetTemperature
 
     def __sendInitializationMessage(self):
         # Read this data from the database instead!
@@ -127,10 +131,20 @@ class Controller:
         self._augerMotorPID.sample_time = (
             initializeMessage.telemetricDataIntervalMs - 100) / 1000
 
-        self._heaterPID = PID(Kp=47.707711553863504,
-                              Ki=0.9025762451585112, Kd=630.4247851401528, setpoint=0)
-        self._heaterPID.sample_time = (
-            initializeMessage.thermistorConfig.pollIntervalMs * self._thermistor.NumSamples) / 1000
+        # self._heaterPID = PID(Kp=2,
+        #                      Ki=0.0015, Kd=0.01, setpoint=0)
+        # self._heaterPID = PID(Kp=0.18708906491711177,
+        #                       Ki=0.003539514686896122, Kd=2.472254059373148, setpoint=0)
+        # self._heaterPID = PID(Kp=47.707711553863504,
+        #                       Ki=0.9025762451585112, Kd=630.4247851401528, setpoint=0)
+        # self._heaterPID.sample_time = (
+        #     initializeMessage.thermistorConfig.pollIntervalMs) / 1000
+        self._heater = Heater(
+            initializeMessage.thermistorConfig.pollIntervalMs / 1000)
+        # try:
+        #     self._heater.target_temp = 170.
+        # except Exception as e:
+        #     print(e)
 
         self._eventEmitter.emit(
             constants.SEND_MESSAGE_TO_MICROCONTROLLER, initializeMessage)
@@ -144,20 +158,30 @@ class Controller:
         t = self._augerMotorPID(self._rpmCounter.currentRPM)
         self._latestAugerSpeed = max(min(255, t), 0)
 
+        targetTemperature = 0.
         if (self._heaterPIDTuner != None):
             self._heaterPIDTuner.temperature_update(
                 time.time(), self._thermistor.temperatureC)
-        else:
-            self._latestHeaterValue = max(0., min(1.0, self._heaterPID(
-                self._thermistor.temperatureC)))
-            print("Latest heater value: {h}".format(h=self._latestHeaterValue))
+        elif (self._heaterPID != None):
+            targetTemperature = self._heaterPID.setpoint
+            currentPidValue = self._heaterPID(self._thermistor.temperatureC)
+            self._latestHeaterValue = max(0., min(1.0, currentPidValue))
+            print("Latest heater value: RAW: {r} Output: {h}".format(
+                r=currentPidValue, h=self._latestHeaterValue))
+        elif (self._heater != None):
+            targetTemperature = self._heater.target_temp
+            currentPidValue = self._heater.temperature_update(
+                time.time(), self._thermistor.temperatureC)
+            self._latestHeaterValue = currentPidValue
+            print("Latest heater value: RAW: {r} Output: {h}".format(
+                r=currentPidValue, h=self._latestHeaterValue))
 
         self._eventEmitter.emit(constants.CONTROLLER_STATE_MESSAGE, {
                                 "currentRPM": self._rpmCounter.currentRPM,
                                 "targetRPM": self._augerMotorPID.setpoint,
                                 "temperature": self._thermistor.temperatureC,
                                 "state": self._state,
-                                "targetTemperature": self._heaterPID.setpoint,
+                                "targetTemperature": targetTemperature,
                                 })
 
     def _onRecievedMessageFromMicrocontroller(self, msg):
